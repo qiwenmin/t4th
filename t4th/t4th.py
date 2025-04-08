@@ -7,6 +7,13 @@
   - [X] 添加word的向前链接指针，实现查找word的功能
 - [ ] 实现BASE
 - [ ] 支持TEST SUITE
+  - [ ] 实现注释
+    - [ ] 实现'('
+    - [ ] 实现'\'
+- [X] 加IMMEDIATE标志，并在vm中使用它
+- [ ] 支持无限循环
+  - [ ] 实现'BEGIN'和'AGAIN'
+- [ ] 实现'['和']'
 """
 
 import os
@@ -21,28 +28,32 @@ class T4th:
     MemAddress = Enum("MemAddress", "EXEC_START DP END", start=0)
 
     class _WordFunc:
-        def __init__(self, word, func):
+        FLAG_IMMEDIATE = 1 << 0
+
+        def __init__(self, word, func, flag=0):
             self.word = word
             self.func = func
+            self.flag = flag
         def __call__(self):
             self.func()
         def __str__(self):
-            return f"`{self.word}`"
+            return f"`{self.word}`{'I' if self.is_immediate() else ''}"
         def __repr__(self):
             return self.__str__()
+        def is_immediate(self):
+            return (self.flag & T4th._WordFunc.FLAG_IMMEDIATE) != 0
 
     class _WordHeader:
-        def __init__(self, word:str, prev:int, flag:int=0):
+        def __init__(self, word:str, prev:int):
             self.word = word
             self.prev = prev
-            self.flag = flag
         def __str__(self):
-            return f"[{self.word} {self.prev} {self.flag}]"
+            return f"[{self.word} {self.prev}]"
         def __repr__(self):
             return self.__str__()
 
-    def _add_word(self, word:str, flag:int=0):
-        wh = self._WordHeader(word, self._latest_word_ptr, flag)
+    def _add_word(self, word:str):
+        wh = self._WordHeader(word, self._latest_word_ptr)
         self._memory_append(wh)
         self._latest_word_ptr = self._here()
 
@@ -53,49 +64,50 @@ class T4th:
         return p
 
     def __init__(self):
-        self._primitive_words = {
-            'KEY': self._word_key,
+        self._primitive_words = [
+            T4th._WordFunc('KEY', self._word_key),
 
-            '.S': self._word_dot_s,
-            '.': self._word_dot,
-            'EMIT': self._word_emit,
-            'CR': self._word_cr,
-            'DUP': self._word_dup,
-            'DROP': self._word_drop,
-            'SWAP': self._word_swap,
-            'OVER': self._word_over,
+            T4th._WordFunc('.S', self._word_dot_s),
+            T4th._WordFunc('.', self._word_dot),
+            T4th._WordFunc('EMIT', self._word_emit),
+            T4th._WordFunc('CR', self._word_cr),
+            T4th._WordFunc('DUP', self._word_dup),
+            T4th._WordFunc('DROP', self._word_drop),
+            T4th._WordFunc('SWAP', self._word_swap),
+            T4th._WordFunc('OVER', self._word_over),
 
-            '!': self._word_mem_store,
-            '@': self._word_mem_fetch,
+            T4th._WordFunc('!', self._word_mem_store),
+            T4th._WordFunc('@', self._word_mem_fetch),
 
-            'DP': self._word_dp,
+            T4th._WordFunc('DP', self._word_dp),
 
-            '>R': self._word_to_r,
-            'R>': self._word_r_from,
+            T4th._WordFunc('>R', self._word_to_r),
+            T4th._WordFunc('R>', self._word_r_from),
 
-            '+': self._word_add,
-            '-': self._word_sub,
-            '*': self._word_mul,
-            '/': self._word_div,
+            T4th._WordFunc('+', self._word_add),
+            T4th._WordFunc('-', self._word_sub),
+            T4th._WordFunc('*', self._word_mul),
+            T4th._WordFunc('/', self._word_div),
 
-            'DOCOL': self._word_docol,
-            'EXIT': self._word_exit,
-            '(LITERAL)': self._word_literal_p,
+            T4th._WordFunc('DOCOL', self._word_docol),
+            T4th._WordFunc('EXIT', self._word_exit),
+            T4th._WordFunc('(LITERAL)', self._word_literal_p),
 
-            'BYE': self._word_bye,
+            T4th._WordFunc('BYE', self._word_bye),
 
-            ':' : self._word_define,
-            ';' : self._word_end_def,
+            T4th._WordFunc(':', self._word_define),
+            T4th._WordFunc(';', self._word_end_def, flag=T4th._WordFunc.FLAG_IMMEDIATE),
 
-            'CREATE': self._word_create,
+            T4th._WordFunc('CREATE', self._word_create),
 
-            '\'': self._word_tick,
-            'EXECUTE': self._word_execute,
+            T4th._WordFunc('\'', self._word_tick),
+            T4th._WordFunc('EXECUTE', self._word_execute),
 
-            'WORDS': self._word_words,
+            T4th._WordFunc('WORDS', self._word_words),
 
-            '.VM': self._print_vm,
-        }
+            T4th._WordFunc('.VM', self._print_vm),
+        ]
+
 
         self._reset_vm()
 
@@ -312,9 +324,9 @@ class T4th:
         self._rescue()
 
         # Add primitive words to dictionary
-        for word, func in self._primitive_words.items():
-            self._add_word(word)
-            self._memory_append(T4th._WordFunc(word, func))
+        for word_func in self._primitive_words:
+            self._add_word(word_func.word)
+            self._memory_append(word_func)
 
     def _rescue(self):
         self._data_stack = []
@@ -368,7 +380,7 @@ class T4th:
         word_ptr = self._find_word(upper_word)
 
         if word_ptr:
-            if self._state == 'defining' and upper_word != ';':
+            if (self._state == 'defining') and (not self._memory[word_ptr].is_immediate()):
                 self._memory_append(word_ptr)
             else:
                 # Execute the word function
