@@ -1,6 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+""" === TODOs ===
+- [X] 去掉dictionary字典，改用传统链表实现
+  - [X] 将word的名字放入memory
+  - [X] 添加word的向前链接指针，实现查找word的功能
+- [ ] 实现BASE
+- [ ] 支持TEST SUITE
+"""
+
+import os
 import sys
 from typing import Optional
 from enum import Enum
@@ -21,6 +30,27 @@ class T4th:
             return f"`{self.word}`"
         def __repr__(self):
             return self.__str__()
+
+    class _WordHeader:
+        def __init__(self, word:str, prev:int, flag:int=0):
+            self.word = word
+            self.prev = prev
+            self.flag = flag
+        def __str__(self):
+            return f"[{self.word} {self.prev} {self.flag}]"
+        def __repr__(self):
+            return self.__str__()
+
+    def _add_word(self, word:str, flag:int=0):
+        wh = self._WordHeader(word, self._latest_word_ptr, flag)
+        self._memory_append(wh)
+        self._latest_word_ptr = self._here()
+
+    def _find_word(self, word:str) -> int:
+        p = self._latest_word_ptr
+        while p > 0 and self._memory[p-1].word!= word:
+            p = self._memory[p-1].prev
+        return p
 
     def __init__(self):
         self._primitive_words = {
@@ -180,10 +210,7 @@ class T4th:
             print('Error: missing word name')
             return
         word = word.upper()
-        if word in self._dictionary:
-            print(f'Error: word "{word}" already defined')
-            return
-        self._dictionary[word] = self._here()
+        self._add_word(word)
         self._state = 'defining'
         self._append_func('DOCOL')
 
@@ -193,16 +220,13 @@ class T4th:
     def _here_plus_one(self):
         self._memory[T4th.MemAddress.DP.value] += 1
 
-    def _append_word_index(self, word):
-        self._memory_append(self._dictionary[word])
-
     def _append_func(self, word):
-        fn_idx = self._dictionary[word]
+        fn_idx = self._find_word(word)
         fn = self._memory[fn_idx]
         self._memory_append(fn)
 
     def _word_end_def(self):
-        self._append_word_index('EXIT')
+        self._memory_append(self._find_word('EXIT'))
         self._state = 'running'
 
     def _word_create(self):
@@ -210,9 +234,7 @@ class T4th:
         if not word:
             raise ValueError('missing word name')
         word = word.upper()
-        if word in self._dictionary:
-            raise ValueError(f'word "{word}" already defined')
-        self._dictionary[word] = self._here()
+        self._add_word(word)
 
     def _word_docol(self):
         self._return_stack.append(self._pc)
@@ -237,7 +259,7 @@ class T4th:
         word = self._get_next_word()
         if not word:
             raise ValueError('missing word name')
-        xt = self._dictionary.get(word.upper())
+        xt = self._find_word(word.upper())
         if xt is None:
             raise ValueError(f'unknown word "{word}"')
         self._data_stack.append(xt)
@@ -251,8 +273,10 @@ class T4th:
 
     def _word_words(self):
         print()
-        for word in self._dictionary:
-            print(word, end=' ')
+        p = self._latest_word_ptr
+        while p > 0:
+            print(self._memory[p-1].word, end=' ')
+            p = self._memory[p-1].prev
 
     def _get_next_word(self) -> Optional[str]:
         if self._input_pos >= len(self._input_buffer):
@@ -283,13 +307,13 @@ class T4th:
         self._memory = [0] * 65536
         self._memory[T4th.MemAddress.DP.value] = T4th.MemAddress.END.value
 
-        self._dictionary = {}
+        self._latest_word_ptr = 0 # 0表示无效的指针
 
         self._rescue()
 
         # Add primitive words to dictionary
         for word, func in self._primitive_words.items():
-            self._dictionary[word] = self._here()
+            self._add_word(word)
             self._memory_append(T4th._WordFunc(word, func))
 
     def _rescue(self):
@@ -307,10 +331,14 @@ class T4th:
 
     def _print_vm(self):
         print()
-        print(f'Data stack: {self._data_stack}')
-        print(f'Return stack: {self._return_stack}')
+        print(f' STACK: {self._data_stack}')
+        print(f'     R: {self._return_stack}')
+        print(f'    PC: {self._pc}')
+        print(f' STATE: {self._state}')
+        print(f'  BASE: {self._base}')
+        print(f'LATEST: {self._latest_word_ptr}')
+
         print(f'Memory: {self._memory[:self._memory[T4th.MemAddress.DP.value]]}')
-        print(f'Dictionary: {self._dictionary}')
 
     def interpret(self):
         while True:
@@ -337,13 +365,15 @@ class T4th:
 
     def _execute_word(self, word):
         upper_word = word.upper()
-        if upper_word in self._dictionary:
+        word_ptr = self._find_word(upper_word)
+
+        if word_ptr:
             if self._state == 'defining' and upper_word != ';':
-                self._append_word_index(upper_word)
+                self._memory_append(word_ptr)
             else:
                 # Execute the word function
                 self._pc = T4th.MemAddress.EXEC_START.value
-                self._memory[T4th.MemAddress.EXEC_START.value] = self._dictionary[upper_word]
+                self._memory[T4th.MemAddress.EXEC_START.value] = word_ptr
 
                 while True:
                     fn_idx = self._memory[self._pc]
@@ -359,7 +389,7 @@ class T4th:
                 value = int(word, self._base)
 
                 if self._state == 'defining':
-                    self._append_word_index('(LITERAL)')
+                    self._memory_append(self._find_word('(LITERAL)'))
                     self._memory_append(value)
                 else:
                     self._data_stack.append(value)
@@ -379,7 +409,10 @@ class T4th:
 
 def main():
     t4th = T4th()
-    t4th.load_and_run_file('core.fs')  # 加载并执行 core.fs 文件的内容
+
+    # 从本模块同级目录下加载并执行 core.fs 文件的内容
+    current_dir = os.path.dirname(__file__)
+    t4th.load_and_run_file(os.path.join(current_dir, 'core.fs'))
 
     print(f'T4th version {t4th._version} [ Free memory {len(t4th._memory) - t4th._here()} ]')
     t4th.interpret()  # 进入命令交互
