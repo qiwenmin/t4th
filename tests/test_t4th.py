@@ -25,7 +25,7 @@ class TestT4th(unittest.TestCase):
             welcome_line = output_lines[0]
             self._assert_welcome_message(welcome_line)
 
-            return '\n'.join(output_lines[1:]).rstrip()
+            return '\n'.join([s.rstrip() for s in output_lines[1:]]).strip()
 
     def test_boot_and_bye(self):
         input_lines = "bye"
@@ -53,6 +53,32 @@ class TestT4th(unittest.TestCase):
             dup .S <3> 1 2 2  ok
             drop 4 swap .S <3> 1 4 2  ok
             over .S <4> 1 4 2 4  ok
+        """).strip()
+
+        output_lines = self._run_script(input_lines)
+        self.assertEqual(output_lines, expected_output_lines)
+
+    def test_word_definition(self):
+        input_lines = textwrap.dedent("""
+            : square dup * ;
+            : cube dup square * ;
+
+            3 square . cr
+            3 cube . cr
+
+            bye
+        """).strip()
+
+        expected_output_lines = textwrap.dedent("""
+            : square dup * ;  ok
+            : cube dup square * ;  ok
+              ok
+            3 square . cr 9
+             ok
+            3 cube . cr 27
+             ok
+              ok
+            bye
         """).strip()
 
         output_lines = self._run_script(input_lines)
