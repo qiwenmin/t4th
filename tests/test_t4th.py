@@ -100,5 +100,49 @@ class TestT4th(unittest.TestCase):
         output_lines = self._run_script(input_lines)
         self.assertEqual(output_lines, expected_output_lines)
 
+    def test_immediate(self):
+        input_lines = textwrap.dedent("""
+            : test1 cr 65 emit ; immediate
+            : test2 test1 cr 66 emit ;
+            test1
+            test2
+            bye
+        """).strip()
+
+        expected_output_lines = textwrap.dedent("""
+            : test1 cr 65 emit ; immediate  ok
+            : test2 test1 cr 66 emit ;
+            A ok
+            test1
+            A ok
+            test2
+            B ok
+            bye
+        """).strip()
+
+        output_lines = self._run_script(input_lines)
+        self.assertEqual(output_lines, expected_output_lines)
+
+    def test_begin_again(self):
+        input_lines = textwrap.dedent("""
+            : test cr begin key . again ;
+            test
+            abcde\003
+            bye
+        """).strip()
+
+        expected_output_lines = textwrap.dedent("""
+            : test cr begin key . again ;  ok
+            test
+            97 98 99 100 101
+            Use interrupt
+              ok
+            bye
+        """).strip()
+
+        output_lines = self._run_script(input_lines)
+        self.assertEqual(output_lines, expected_output_lines)
+
+
 if __name__ == '__main__':
     unittest.main()

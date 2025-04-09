@@ -5,19 +5,20 @@
 - [X] 去掉dictionary字典，改用传统链表实现
   - [X] 将word的名字放入memory
   - [X] 添加word的向前链接指针，实现查找word的功能
-- [ ] 实现测试用例
+- [X] 实现测试用例
   - [X] 测试启动和退出
   - [X] 对基本堆栈操作做测试
   - [X] 测试定义新词
-  - ...
 - [ ] 实现BASE
 - [ ] 支持TEST SUITE
   - [ ] 实现注释
     - [ ] 实现'('
     - [ ] 实现'\'
 - [X] 加IMMEDIATE标志，并在vm中使用它
-- [ ] 支持无限循环
-  - [ ] 实现'BEGIN'和'AGAIN'
+- [X] 实现无限循环
+  - [X] 实现'BEGIN'和'AGAIN'
+    - [X] 实现'IMMEDIATE'
+    - [X] 实现'BRANCH'
 - [X] 实现'['和']'
 """
 
@@ -84,6 +85,7 @@ class T4th:
 
             T4th._WordFunc('!', self._word_mem_store),
             T4th._WordFunc('@', self._word_mem_fetch),
+            T4th._WordFunc(',', self._word_comma),
 
             T4th._WordFunc('DP', self._word_dp),
 
@@ -102,6 +104,10 @@ class T4th:
 
             T4th._WordFunc(']', self._word_right_bracket),
             T4th._WordFunc('[', self._word_left_bracket, flag=T4th._WordFunc.FLAG_IMMEDIATE),
+
+            T4th._WordFunc('IMMEDIATE', self._word_immediate, flag=T4th._WordFunc.FLAG_IMMEDIATE),
+
+            T4th._WordFunc('BRANCH', self._word_branch),
 
             T4th._WordFunc('BYE', self._word_bye),
 
@@ -131,6 +137,8 @@ class T4th:
         if not key:
             self._data_stack.append(0)
         else:
+            if key == '\x03': # Ctrl-C
+                raise KeyboardInterrupt()
             self._data_stack.append(ord(key))
 
     def _word_dot_s(self):
@@ -188,6 +196,11 @@ class T4th:
         x = self._memory[addr]
         self._data_stack.append(x)
 
+    def _word_comma(self):
+        self._check_stack(1)
+
+        self._memory_append(self._data_stack.pop())
+
     def _word_dp(self):
         self._data_stack.append(T4th.MemAddress.DP.value)
 
@@ -222,30 +235,25 @@ class T4th:
         a = self._data_stack.pop()
         b = self._data_stack.pop()
         if b == 0:
-            print('Error: division by zero')
-            return
+            raise ValueError('division by zero')
+
         self._data_stack.append(b // a)
 
     def _word_define(self):
         word = self._get_next_word()
         if not word:
-            print('Error: missing word name')
-            return
+            raise ValueError('missing word name')
+
         word = word.upper()
         self._add_word(word)
         self._state = 'defining'
-        self._append_func('DOCOL')
+        self._memory_append(T4th._WordFunc(word, self._word_docol))
 
     def _here(self):
         return self._memory[T4th.MemAddress.DP.value]
 
     def _here_plus_one(self):
         self._memory[T4th.MemAddress.DP.value] += 1
-
-    def _append_func(self, word):
-        fn_idx = self._find_word(word)
-        fn = self._memory[fn_idx]
-        self._memory_append(fn)
 
     def _word_end_def(self):
         self._memory_append(self._find_word('EXIT'))
@@ -260,12 +268,14 @@ class T4th:
 
     def _word_docol(self):
         self._return_stack.append(self._pc)
-        self._pc = self._memory[self._pc - 1] + 1
+        this_docol_xt = self._memory[self._pc - 1]
+        this_docol = self._memory[this_docol_xt]
+        self._pc = this_docol_xt + 1
 
     def _word_exit(self):
         if len(self._return_stack) == 0:
-            print('Error: return stack empty')
-            return
+            raise ValueError('return stack empty')
+
         self._pc = self._return_stack.pop()
 
     def _word_literal(self):
@@ -285,6 +295,13 @@ class T4th:
 
     def _word_left_bracket(self):
         self._state = 'running'
+
+    def _word_immediate(self):
+        if self._latest_word_ptr > 0:
+            self._memory[self._latest_word_ptr].flag |= T4th._WordFunc.FLAG_IMMEDIATE
+
+    def _word_branch(self):
+        self._pc += (self._memory[self._pc] -1)
 
     def _word_bye(self):
         print()
@@ -335,6 +352,8 @@ class T4th:
         return word
 
     def _memory_append(self, v):
+        if self._here() >= len(self._memory):
+            raise ValueError('memory overflow')
         self._memory[self._here()] = v
         self._here_plus_one()
 
@@ -404,7 +423,7 @@ class T4th:
         word_ptr = self._find_word(upper_word)
 
         if word_ptr:
-            if (self._state == 'defining') and (not self._memory[word_ptr].is_immediate()):
+            if self._state == 'defining' and not self._memory[word_ptr].is_immediate():
                 self._memory_append(word_ptr)
             else:
                 # Execute the word function
@@ -415,9 +434,12 @@ class T4th:
                     fn_idx = self._memory[self._pc]
                     self._pc += 1
                     fn = self._memory[fn_idx]
+                    if not isinstance(fn, T4th._WordFunc):
+                        raise ValueError(f'Invalid xt {fn_idx}')
+
                     fn()
 
-                    if not self._return_stack:
+                    if self._pc == T4th.MemAddress.EXEC_START.value + 1:
                         break # End of execution
 
         else:
