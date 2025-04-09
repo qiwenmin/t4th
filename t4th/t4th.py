@@ -20,6 +20,7 @@
     - [X] 实现'IMMEDIATE'
     - [X] 实现'BRANCH'
 - [X] 实现'['和']'
+- [X] 实现POSTPONE
 """
 
 import os
@@ -118,6 +119,8 @@ class T4th:
 
             T4th._WordFunc('\'', self._word_tick),
             T4th._WordFunc('EXECUTE', self._word_execute),
+
+            T4th._WordFunc('POSTPONE', self._word_postpone, flag=T4th._WordFunc.FLAG_IMMEDIATE),
 
             T4th._WordFunc('WORDS', self._word_words),
 
@@ -322,6 +325,20 @@ class T4th:
         xt = self._data_stack.pop()
         fn = self._memory[xt]
         fn()
+
+    def _word_postpone(self):
+        word = self._get_next_word()
+        if not word:
+            raise ValueError('missing word name')
+        fn_ptr = self._find_word(word.upper())
+        if fn_ptr is None:
+            raise ValueError(f'unknown word "{word}"')
+        if self._memory[fn_ptr].is_immediate():
+            self._memory_append(fn_ptr)
+        else:
+            self._memory_append(self._find_word('(LITERAL)'))
+            self._memory_append(fn_ptr)
+            self._memory_append(self._find_word(','))
 
     def _word_words(self):
         print()

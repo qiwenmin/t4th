@@ -143,6 +143,32 @@ class TestT4th(unittest.TestCase):
         output_lines = self._run_script(input_lines)
         self.assertEqual(output_lines, expected_output_lines)
 
+    def test_postpone(self):
+        input_lines = textwrap.dedent("""
+            : GT1 123 ;
+            : GT4 POSTPONE GT1 ; IMMEDIATE
+            : GT5 GT4 ;
+            GT5 .
+            : GT6 345 ; IMMEDIATE
+            : GT7 POSTPONE GT6 ;
+            GT7 .
+            bye
+        """).strip()
+
+        expected_output_lines = textwrap.dedent("""
+            : GT1 123 ;  ok
+            : GT4 POSTPONE GT1 ; IMMEDIATE  ok
+            : GT5 GT4 ;  ok
+            GT5 . 123  ok
+            : GT6 345 ; IMMEDIATE  ok
+            : GT7 POSTPONE GT6 ;  ok
+            GT7 . 345  ok
+            bye
+        """).strip()
+
+        output_lines = self._run_script(input_lines)
+        self.assertEqual(output_lines, expected_output_lines)
+
 
 if __name__ == '__main__':
     unittest.main()
