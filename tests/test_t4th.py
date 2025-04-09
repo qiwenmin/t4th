@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import patch
 from io import StringIO
 import re
+import textwrap
 
 from t4th import t4th
 
@@ -12,15 +13,51 @@ class TestT4th(unittest.TestCase):
         match = re.match(self._welcome_message_patter, welcome_line)
         self.assertIsNotNone(match, f"Welcome message is not matched: {welcome_line}")
 
-    def test_boot_and_bye(self):
+    def _run_script(self, script_lines) -> str:
+        if not script_lines.endswith('\n'):
+            script_lines += '\n'
 
-        input_lines = "bye\n"
-
-        with patch('sys.stdin', new=StringIO(input_lines)), \
+        with patch('sys.stdin', new=StringIO(script_lines)), \
              patch('sys.stdout', new=StringIO()) as mock_stdout:
             t4th.main()
             output = mock_stdout.getvalue()
-            self._assert_welcome_message(output.split('\n')[0])
+            output_lines = output.split('\n')
+            welcome_line = output_lines[0]
+            self._assert_welcome_message(welcome_line)
+
+            return '\n'.join(output_lines[1:]).rstrip()
+
+    def test_boot_and_bye(self):
+        input_lines = "bye"
+        expected_output_lines = "bye"
+
+        output_lines = self._run_script(input_lines)
+        self.assertEqual(output_lines, expected_output_lines)
+
+    def test_basic_stack_operations(self):
+        input_lines = textwrap.dedent("""
+            .S
+            1 2 3
+            .S
+            drop .S
+            dup .S
+            drop 4 swap .S
+            over .S
+        """).strip()
+
+        expected_output_lines = textwrap.dedent("""
+            .S <0>  ok
+            1 2 3  ok
+            .S <3> 1 2 3  ok
+            drop .S <2> 1 2  ok
+            dup .S <3> 1 2 2  ok
+            drop 4 swap .S <3> 1 4 2  ok
+            over .S <4> 1 4 2 4  ok
+        """).strip()
+
+        output_lines = self._run_script(input_lines)
+        self.assertEqual(output_lines, expected_output_lines)
+
 
 if __name__ == '__main__':
     unittest.main()

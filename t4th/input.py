@@ -3,6 +3,7 @@
 import sys
 from wcwidth import wcwidth
 from typing import Optional
+from io import StringIO
 
 if sys.platform == 'win32':
     import msvcrt
@@ -53,7 +54,8 @@ def get_input_line(prompt: str = '', stream=None) -> Optional[str]:
     if stream is None:
         stream = sys.stdin
 
-    if stream.isatty():
+    # StringIO用于单元测试
+    if isinstance(stream, StringIO) or stream.isatty():
         _out = sys.stdout
     else:
         _out = NullIO()

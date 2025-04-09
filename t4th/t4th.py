@@ -7,7 +7,7 @@
   - [X] 添加word的向前链接指针，实现查找word的功能
 - [ ] 实现测试用例
   - [X] 测试启动和退出
-  - [ ] 对基本堆栈操作做测试
+  - [X] 对基本堆栈操作做测试
   - [ ] 测试定义新词
 - [ ] 实现BASE
 - [ ] 支持TEST SUITE
@@ -75,6 +75,7 @@ class T4th:
             T4th._WordFunc('.', self._word_dot),
             T4th._WordFunc('EMIT', self._word_emit),
             T4th._WordFunc('CR', self._word_cr),
+
             T4th._WordFunc('DUP', self._word_dup),
             T4th._WordFunc('DROP', self._word_drop),
             T4th._WordFunc('SWAP', self._word_swap),
