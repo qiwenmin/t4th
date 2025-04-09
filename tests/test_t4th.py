@@ -84,6 +84,21 @@ class TestT4th(unittest.TestCase):
         output_lines = self._run_script(input_lines)
         self.assertEqual(output_lines, expected_output_lines)
 
+    def test_literal_related(self):
+        input_lines = textwrap.dedent("""
+            : test [ 42 ] literal ;
+            test .
+            bye
+        """).strip()
+
+        expected_output_lines = textwrap.dedent("""
+            : test [ 42 ] literal ;  ok
+            test . 42  ok
+            bye
+        """).strip()
+
+        output_lines = self._run_script(input_lines)
+        self.assertEqual(output_lines, expected_output_lines)
 
 if __name__ == '__main__':
     unittest.main()

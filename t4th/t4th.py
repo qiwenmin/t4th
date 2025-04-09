@@ -18,7 +18,7 @@
 - [X] 加IMMEDIATE标志，并在vm中使用它
 - [ ] 支持无限循环
   - [ ] 实现'BEGIN'和'AGAIN'
-- [ ] 实现'['和']'
+- [X] 实现'['和']'
 """
 
 import os
@@ -97,7 +97,11 @@ class T4th:
 
             T4th._WordFunc('DOCOL', self._word_docol),
             T4th._WordFunc('EXIT', self._word_exit),
+            T4th._WordFunc('LITERAL', self._word_literal, flag=T4th._WordFunc.FLAG_IMMEDIATE),
             T4th._WordFunc('(LITERAL)', self._word_literal_p),
+
+            T4th._WordFunc(']', self._word_right_bracket),
+            T4th._WordFunc('[', self._word_left_bracket, flag=T4th._WordFunc.FLAG_IMMEDIATE),
 
             T4th._WordFunc('BYE', self._word_bye),
 
@@ -264,10 +268,23 @@ class T4th:
             return
         self._pc = self._return_stack.pop()
 
+    def _word_literal(self):
+        self._check_stack(1)
+
+        xt = self._find_word('(LITERAL)')
+        self._memory_append(xt)
+        self._memory_append(self._data_stack.pop())
+
     def _word_literal_p(self):
         value = self._memory[self._pc]
         self._data_stack.append(value)
         self._pc += 1
+
+    def _word_right_bracket(self):
+        self._state = 'defining'
+
+    def _word_left_bracket(self):
+        self._state = 'running'
 
     def _word_bye(self):
         print()
