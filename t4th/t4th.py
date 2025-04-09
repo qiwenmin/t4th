@@ -5,6 +5,10 @@
 - [X] 去掉dictionary字典，改用传统链表实现
   - [X] 将word的名字放入memory
   - [X] 添加word的向前链接指针，实现查找word的功能
+- [ ] 实现测试用例
+  - [X] 测试启动和退出
+  - [ ] 对基本堆栈操作做测试
+  - [ ] 测试定义新词
 - [ ] 实现BASE
 - [ ] 支持TEST SUITE
   - [ ] 实现注释
@@ -265,7 +269,7 @@ class T4th:
 
     def _word_bye(self):
         print()
-        exit(0)
+        self._quit = True
 
     def _word_tick(self):
         word = self._get_next_word()
@@ -316,6 +320,7 @@ class T4th:
         self._here_plus_one()
 
     def _reset_vm(self):
+        self._quit = False
         self._memory = [0] * 65536
         self._memory[T4th.MemAddress.DP.value] = T4th.MemAddress.END.value
 
@@ -353,7 +358,7 @@ class T4th:
         print(f'Memory: {self._memory[:self._memory[T4th.MemAddress.DP.value]]}')
 
     def interpret(self):
-        while True:
+        while not self._quit:
             try:
                 word = self._get_next_word()
                 if word is None:

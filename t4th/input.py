@@ -49,7 +49,10 @@ def _move_cursor_right(cursor_pos, display_widths, out_stream, result) -> int:
         cursor_pos += 1
     return cursor_pos
 
-def get_input_line(prompt: str = '', stream=sys.stdin) -> Optional[str]:
+def get_input_line(prompt: str = '', stream=None) -> Optional[str]:
+    if stream is None:
+        stream = sys.stdin
+
     if stream.isatty():
         _out = sys.stdout
     else:
