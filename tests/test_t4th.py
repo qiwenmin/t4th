@@ -13,9 +13,10 @@ class TestT4th(unittest.TestCase):
         match = re.match(self._welcome_message_patter, welcome_line)
         self.assertIsNotNone(match, f"Welcome message is not matched: {welcome_line}")
 
-    def _run_script(self, script_lines) -> str:
-        if not script_lines.endswith('\n'):
-            script_lines += '\n'
+    def _run_script(self, script_lines, expected_output_lines):
+        script_lines = textwrap.dedent(script_lines).strip() + '\n'
+
+        expected_output_lines = textwrap.dedent(expected_output_lines).strip()
 
         with patch('sys.stdin', new=StringIO(script_lines)), \
              patch('sys.stdout', new=StringIO()) as mock_stdout:
@@ -25,17 +26,17 @@ class TestT4th(unittest.TestCase):
             welcome_line = output_lines[0]
             self._assert_welcome_message(welcome_line)
 
-            return '\n'.join([s.rstrip() for s in output_lines[1:]]).strip()
+            output_lines = '\n'.join([s.rstrip() for s in output_lines[1:]]).strip()
+            self.assertEqual(output_lines, expected_output_lines)
 
     def test_boot_and_bye(self):
         input_lines = "bye"
         expected_output_lines = "bye"
 
-        output_lines = self._run_script(input_lines)
-        self.assertEqual(output_lines, expected_output_lines)
+        self._run_script(input_lines, expected_output_lines)
 
     def test_basic_stack_operations(self):
-        input_lines = textwrap.dedent("""
+        input_lines = """
             .S
             1 2 3
             .S
@@ -43,9 +44,9 @@ class TestT4th(unittest.TestCase):
             dup .S
             drop 4 swap .S
             over .S
-        """).strip()
+        """
 
-        expected_output_lines = textwrap.dedent("""
+        expected_output_lines = """
             .S <0>  ok
             1 2 3  ok
             .S <3> 1 2 3  ok
@@ -53,13 +54,12 @@ class TestT4th(unittest.TestCase):
             dup .S <3> 1 2 2  ok
             drop 4 swap .S <3> 1 4 2  ok
             over .S <4> 1 4 2 4  ok
-        """).strip()
+        """
 
-        output_lines = self._run_script(input_lines)
-        self.assertEqual(output_lines, expected_output_lines)
+        self._run_script(input_lines, expected_output_lines)
 
     def test_word_definition(self):
-        input_lines = textwrap.dedent("""
+        input_lines = """
             : square dup * ;
             : cube dup square * ;
 
@@ -67,9 +67,9 @@ class TestT4th(unittest.TestCase):
             3 cube . cr
 
             bye
-        """).strip()
+        """
 
-        expected_output_lines = textwrap.dedent("""
+        expected_output_lines = """
             : square dup * ;  ok
             : cube dup square * ;  ok
               ok
@@ -79,37 +79,35 @@ class TestT4th(unittest.TestCase):
              ok
               ok
             bye
-        """).strip()
+        """
 
-        output_lines = self._run_script(input_lines)
-        self.assertEqual(output_lines, expected_output_lines)
+        self._run_script(input_lines, expected_output_lines)
 
     def test_literal_related(self):
-        input_lines = textwrap.dedent("""
+        input_lines = """
             : test [ 42 ] literal ;
             test .
             bye
-        """).strip()
+        """
 
-        expected_output_lines = textwrap.dedent("""
+        expected_output_lines = """
             : test [ 42 ] literal ;  ok
             test . 42  ok
             bye
-        """).strip()
+        """
 
-        output_lines = self._run_script(input_lines)
-        self.assertEqual(output_lines, expected_output_lines)
+        self._run_script(input_lines, expected_output_lines)
 
     def test_immediate(self):
-        input_lines = textwrap.dedent("""
+        input_lines = """
             : test1 cr 65 emit ; immediate
             : test2 test1 cr 66 emit ;
             test1
             test2
             bye
-        """).strip()
+        """
 
-        expected_output_lines = textwrap.dedent("""
+        expected_output_lines = """
             : test1 cr 65 emit ; immediate  ok
             : test2 test1 cr 66 emit ;
             A ok
@@ -118,33 +116,32 @@ class TestT4th(unittest.TestCase):
             test2
             B ok
             bye
-        """).strip()
+        """
 
-        output_lines = self._run_script(input_lines)
-        self.assertEqual(output_lines, expected_output_lines)
+        self._run_script(input_lines, expected_output_lines)
 
     def test_begin_again(self):
-        input_lines = textwrap.dedent("""
+        input_lines = """
             : test cr begin key . again ;
             test
             abcde\003
             bye
-        """).strip()
+        """
 
-        expected_output_lines = textwrap.dedent("""
+        expected_output_lines = """
             : test cr begin key . again ;  ok
             test
             97 98 99 100 101
             Use interrupt
               ok
             bye
-        """).strip()
+        """
 
-        output_lines = self._run_script(input_lines)
-        self.assertEqual(output_lines, expected_output_lines)
+        self._run_script(input_lines, expected_output_lines)
 
     def test_postpone(self):
-        input_lines = textwrap.dedent("""
+        "F.6.1.2033"
+        input_lines = """
             : GT1 123 ;
             : GT4 POSTPONE GT1 ; IMMEDIATE
             : GT5 GT4 ;
@@ -153,9 +150,9 @@ class TestT4th(unittest.TestCase):
             : GT7 POSTPONE GT6 ;
             GT7 .
             bye
-        """).strip()
+        """
 
-        expected_output_lines = textwrap.dedent("""
+        expected_output_lines = """
             : GT1 123 ;  ok
             : GT4 POSTPONE GT1 ; IMMEDIATE  ok
             : GT5 GT4 ;  ok
@@ -164,10 +161,9 @@ class TestT4th(unittest.TestCase):
             : GT7 POSTPONE GT6 ;  ok
             GT7 . 345  ok
             bye
-        """).strip()
+        """
 
-        output_lines = self._run_script(input_lines)
-        self.assertEqual(output_lines, expected_output_lines)
+        self._run_script(input_lines, expected_output_lines)
 
 
 if __name__ == '__main__':
