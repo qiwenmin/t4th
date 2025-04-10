@@ -182,18 +182,41 @@ class TestT4th(unittest.TestCase):
         self._run_script(input_lines, expected_output_lines)
 
     def test_create_body_does(self):
-        "F.6.1.1250" # TODO 这只用到了create，body和does还没有做。
+        "F.6.1.1250"
         input_lines = """
+            : DOES1 DOES> @ 1 + ;
+            : DOES2 DOES> @ 2 + ;
             CREATE CR1 .s
             CR1 here - .
             1 ,
             CR1 @ .
+            DOES1 .S
+            CR1 .
+            DOES2 .S
+            CR1 .
+            : WEIRD: CREATE DOES> 1 + DOES> 2 + ; .S
+            WEIRD: W1 .S
+            ' W1 >BODY HERE - .
+            W1 HERE 1 + - .
+            W1 HERE 2 + - .
         """
+
         expected_output_lines = """
+            : DOES1 DOES> @ 1 + ;  ok
+            : DOES2 DOES> @ 2 + ;  ok
             CREATE CR1 .s <0>  ok
             CR1 here - . 0  ok
             1 ,  ok
             CR1 @ . 1  ok
+            DOES1 .S <0>  ok
+            CR1 . 2  ok
+            DOES2 .S <0>  ok
+            CR1 . 3  ok
+            : WEIRD: CREATE DOES> 1 + DOES> 2 + ; .S <0>  ok
+            WEIRD: W1 .S <0>  ok
+            ' W1 >BODY HERE - . 0  ok
+            W1 HERE 1 + - . 0  ok
+            W1 HERE 2 + - . 0  ok
         """
 
         self._run_script(input_lines, expected_output_lines)

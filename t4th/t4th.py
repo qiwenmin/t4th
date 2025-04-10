@@ -12,7 +12,7 @@
 - [ ] 支持TEST SUITE
   - [X] 实现注释
     - [X] 实现'('
-    - [X] 实现'\'
+    - [X] 实现'\\'
   - [X] 实现BASE
 - [X] 加IMMEDIATE标志，并在vm中使用它
 - [X] 实现无限循环
@@ -21,8 +21,8 @@
     - [X] 实现'BRANCH'
 - [X] 实现'['和']'
 - [X] 实现POSTPONE
-- [ ] 实现CONSTANT
-  - [ ] 实现DOES>
+- [X] 实现CONSTANT
+  - [X] 实现DOES>
 - [X] 实现VARIABLE
   - [X] 修复CREATE的运行时行为问题
 """

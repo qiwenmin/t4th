@@ -8,6 +8,8 @@
 
 : 1+ 1 + ;
 
+: >body 1+ ;
+
 : +! swap over @ + swap ! ;
 : allot dp +! ;
 : rot >r swap r> swap ;
