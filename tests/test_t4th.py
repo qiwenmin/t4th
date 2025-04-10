@@ -168,11 +168,13 @@ class TestT4th(unittest.TestCase):
     def test_paren(self):
         "F.6.1.0080"
         input_lines = """
+            \ There is no space either side of the ).
             ( A comment)1234 .
             : pc1 ( A comment)1234 ; pc1 .
         """
 
         expected_output_lines = """
+            \ There is no space either side of the ).  ok
             ( A comment)1234 . 1234  ok
             : pc1 ( A comment)1234 ; pc1 . 1234  ok
         """

@@ -11,9 +11,9 @@
   - [X] 测试定义新词
 - [ ] 实现BASE
 - [ ] 支持TEST SUITE
-  - [ ] 实现注释
+  - [X] 实现注释
     - [X] 实现'('
-    - [ ] 实现'\'
+    - [X] 实现'\'
 - [X] 加IMMEDIATE标志，并在vm中使用它
 - [X] 实现无限循环
   - [X] 实现'BEGIN'和'AGAIN'
@@ -73,6 +73,7 @@ class T4th:
     def __init__(self):
         self._primitive_words = [
             T4th._WordFunc('(', self._word_paren, flag=T4th._WordFunc.FLAG_IMMEDIATE),
+            T4th._WordFunc('\\', self._word_backslash, flag=T4th._WordFunc.FLAG_IMMEDIATE),
 
             T4th._WordFunc('KEY', self._word_key),
 
@@ -139,6 +140,9 @@ class T4th:
     def _word_paren(self):
         if not self._get_until_char(')'):
             raise ValueError('unclosed parenthesis')
+
+    def _word_backslash(self):
+        self._input_pos = len(self._input_buffer)
 
     def _word_key(self):
         key = get_raw_input(self._in_stream)
