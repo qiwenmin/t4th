@@ -3,7 +3,8 @@
 : hex $10 base ! ;
 : decimal #10 base ! ;
 
-: variable ( name -- ) create 0 , ;
+: variable create 0 , ;
+: constant create , does> @ ;
 
 : 1+ 1 + ;
 

@@ -101,6 +101,8 @@ class T4th:
             T4th._WordFunc('(', self._word_paren, flag=T4th._WordFunc.FLAG_IMMEDIATE),
             T4th._WordFunc('\\', self._word_backslash, flag=T4th._WordFunc.FLAG_IMMEDIATE),
 
+            T4th._WordFunc('BASE', self._word_base),
+
             T4th._WordFunc('KEY', self._word_key),
 
             T4th._WordFunc('.S', self._word_dot_s),
@@ -144,6 +146,8 @@ class T4th:
 
             T4th._WordFunc('(CREATE)', self._word_create_p),
             T4th._WordFunc('CREATE', self._word_create),
+
+            T4th._WordFunc('DOES>', self._word_does),
 
             T4th._WordFunc('\'', self._word_tick),
             T4th._WordFunc('EXECUTE', self._word_execute),
@@ -314,6 +318,32 @@ class T4th:
         word = word.upper()
         self._add_word(word)
         self._memory_append(T4th._WordFunc(word, self._word_create_p))
+
+    def _create_does_func(self, jmp_pc):
+        """
+        生成的函数
+        1. 将当前pc压入返回栈
+        2. 将当前词的数据区的指针放到数据栈顶
+        3. 跳到之前已经编译了的DOES>后的代码位置
+        """
+        _self = self
+        def _does_func():
+            self._return_stack.append(self._pc)
+
+            this_xt = _self._memory[_self._pc - 1] + 1
+            _self._data_stack.append(this_xt)
+
+            _self._pc = jmp_pc
+
+        return _does_func
+
+    def _word_does(self):
+        here = self._here()
+        latest = self._latest_word_ptr
+        jmp_pc = self._pc
+        does_func = self._create_does_func(jmp_pc)
+        self._memory[latest] = T4th._WordFunc(f'(DOES/{jmp_pc})', does_func)
+        self._word_exit()
 
     def _word_docol(self):
         self._return_stack.append(self._pc)

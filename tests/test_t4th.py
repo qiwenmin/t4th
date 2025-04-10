@@ -213,6 +213,25 @@ class TestT4th(unittest.TestCase):
 
         self._run_script(input_lines, expected_output_lines)
 
+    def test_constant(self):
+        "F.6.1.0950"
+        input_lines = """
+            123 CONSTANT X123
+            X123 .
+            : EQU CONSTANT ;
+            X123 EQU Y123
+            Y123 .
+        """
+        expected_output_lines = """
+            123 CONSTANT X123  ok
+            X123 . 123  ok
+            : EQU CONSTANT ;  ok
+            X123 EQU Y123  ok
+            Y123 . 123  ok
+        """
+
+        self._run_script(input_lines, expected_output_lines)
+
     def test_base(self):
         "F.6.1.0750"
         input_lines = """
