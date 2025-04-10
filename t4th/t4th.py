@@ -51,7 +51,7 @@ def int_to_base(n: int, base: int) -> str:
 class T4th:
     _version = '0.1.0'
 
-    MemAddress = Enum("MemAddress", "EXEC_START DP BASE END", start=0)
+    MemAddress = Enum("MemAddress", "DP BASE END", start=0)
 
     def _add_push_int_word(self, name, value):
         fn = lambda: self._data_stack.append(value)
@@ -127,7 +127,6 @@ class T4th:
             T4th._WordFunc('*', self._word_mul),
             T4th._WordFunc('/', self._word_div),
 
-            T4th._WordFunc('DOCOL', self._word_docol),
             T4th._WordFunc('EXIT', self._word_exit),
             T4th._WordFunc('LITERAL', self._word_literal, flag=T4th._WordFunc.FLAG_IMMEDIATE),
             T4th._WordFunc('(LITERAL)', self._word_literal_p),
@@ -144,7 +143,6 @@ class T4th:
             T4th._WordFunc(':', self._word_define),
             T4th._WordFunc(';', self._word_end_def, flag=T4th._WordFunc.FLAG_IMMEDIATE),
 
-            T4th._WordFunc('(CREATE)', self._word_create_p),
             T4th._WordFunc('CREATE', self._word_create),
 
             T4th._WordFunc('DOES>', self._word_does),
@@ -292,7 +290,21 @@ class T4th:
         word = word.upper()
         self._add_word(word)
         self._state = 'defining'
-        self._memory_append(T4th._WordFunc(word, self._word_docol))
+        next_pc = self._here() + 1
+        self._memory_append(T4th._WordFunc(word, self._create_docol(next_pc)))
+
+    def _create_docol(self, next_pc):
+        _self = self
+        def _docol():
+            _self._return_stack.append(_self._pc)
+            _self._pc = next_pc
+        return _docol
+
+    def _word_exit(self):
+        if len(self._return_stack) == 0:
+            raise ValueError('return stack empty')
+
+        self._pc = self._return_stack.pop()
 
     def _base(self):
         return self._memory[T4th.MemAddress.BASE.value]
@@ -307,9 +319,11 @@ class T4th:
         self._memory_append(self._find_word('EXIT'))
         self._state = 'running'
 
-    def _word_create_p(self):
-        this_xt = self._memory[self._pc - 1] + 1
-        self._data_stack.append(this_xt)
+    def _create_create_p(self, xt):
+        _self = self
+        def _create_p():
+            _self._data_stack.append(xt)
+        return _create_p
 
     def _word_create(self):
         word = self._get_next_word()
@@ -317,9 +331,10 @@ class T4th:
             raise ValueError('missing word name')
         word = word.upper()
         self._add_word(word)
-        self._memory_append(T4th._WordFunc(word, self._word_create_p))
+        xt = self._here() + 1
+        self._memory_append(T4th._WordFunc(word, self._create_create_p(xt)))
 
-    def _create_does_func(self, jmp_pc):
+    def _create_does_func(self, xt, jmp_pc):
         """
         生成的函数
         1. 将当前pc压入返回栈
@@ -328,11 +343,8 @@ class T4th:
         """
         _self = self
         def _does_func():
-            self._return_stack.append(self._pc)
-
-            this_xt = _self._memory[_self._pc - 1] + 1
-            _self._data_stack.append(this_xt)
-
+            _self._return_stack.append(self._pc)
+            _self._data_stack.append(xt)
             _self._pc = jmp_pc
 
         return _does_func
@@ -340,22 +352,11 @@ class T4th:
     def _word_does(self):
         here = self._here()
         latest = self._latest_word_ptr
+        xt = latest + 1
         jmp_pc = self._pc
-        does_func = self._create_does_func(jmp_pc)
+        does_func = self._create_does_func(xt, jmp_pc)
         self._memory[latest] = T4th._WordFunc(f'(DOES/{jmp_pc})', does_func)
         self._word_exit()
-
-    def _word_docol(self):
-        self._return_stack.append(self._pc)
-        this_docol_xt = self._memory[self._pc - 1]
-        this_docol = self._memory[this_docol_xt]
-        self._pc = this_docol_xt + 1
-
-    def _word_exit(self):
-        if len(self._return_stack) == 0:
-            raise ValueError('return stack empty')
-
-        self._pc = self._return_stack.pop()
 
     def _word_literal(self):
         self._check_stack(1)
@@ -530,11 +531,9 @@ class T4th:
             if self._state == 'defining' and not self._memory[word_ptr].is_immediate():
                 self._memory_append(word_ptr)
             else:
-                # Execute the word function
-                self._pc = T4th.MemAddress.EXEC_START.value
-                self._memory[T4th.MemAddress.EXEC_START.value] = word_ptr
+                self._memory[word_ptr]()
 
-                while True:
+                while self._return_stack:
                     fn_idx = self._memory[self._pc]
                     self._pc += 1
                     fn = self._memory[fn_idx]
@@ -542,9 +541,6 @@ class T4th:
                         raise ValueError(f'Invalid xt {fn_idx}')
 
                     fn()
-
-                    if self._pc == T4th.MemAddress.EXEC_START.value + 1:
-                        break # End of execution
 
         else:
             try:

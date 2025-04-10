@@ -272,6 +272,34 @@ class TestT4th(unittest.TestCase):
 
         self._run_script(input_lines, expected_output_lines)
 
+    def test_tick(self):
+        "F.6.1.0070"
+        input_lines = """
+            : GT1 123 ;
+            ' GT1 EXECUTE .
+        """
+        expected_output_lines = """
+            : GT1 123 ;  ok
+            ' GT1 EXECUTE . 123  ok
+        """
+
+        self._run_script(input_lines, expected_output_lines)
+
+    def test_bracket_tick(self):
+        "F.6.1.2510"
+        input_lines = """
+            : GT1 123 ;
+            : GT2 ['] GT1 ; IMMEDIATE
+            GT2 EXECUTE .
+        """
+        expected_output_lines = """
+            : GT1 123 ;  ok
+            : GT2 ['] GT1 ; IMMEDIATE  ok
+            GT2 EXECUTE . 123  ok
+        """
+
+        self._run_script(input_lines, expected_output_lines)
+
 
 if __name__ == '__main__':
     unittest.main()

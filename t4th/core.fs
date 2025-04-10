@@ -19,3 +19,5 @@
 
 : begin here ; immediate
 : again (literal) branch , here - 1+ , ; immediate
+
+: ['] ' postpone literal ; immediate
