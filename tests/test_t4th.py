@@ -168,13 +168,13 @@ class TestT4th(unittest.TestCase):
     def test_paren(self):
         "F.6.1.0080"
         input_lines = """
-            \ There is no space either side of the ).
+            \\ There is no space either side of the ).
             ( A comment)1234 .
             : pc1 ( A comment)1234 ; pc1 .
         """
 
         expected_output_lines = """
-            \ There is no space either side of the ).  ok
+            \\ There is no space either side of the ).  ok
             ( A comment)1234 . 1234  ok
             : pc1 ( A comment)1234 ; pc1 . 1234  ok
         """
@@ -209,6 +209,23 @@ class TestT4th(unittest.TestCase):
             VARIABLE V1  ok
             123 V1 !  ok
             V1 @ .S <1> 123  ok
+        """
+
+        self._run_script(input_lines, expected_output_lines)
+
+    def test_base(self):
+        "F.6.1.0750"
+        input_lines = """
+            HEX
+            : GN2 \\ ( -- 16 10 )
+               BASE @ >R HEX BASE @ DECIMAL BASE @ R> BASE ! ;
+            GN2 .S
+        """
+        expected_output_lines = """
+            HEX  ok
+            : GN2 \\ ( -- 16 10 )  ok
+               BASE @ >R HEX BASE @ DECIMAL BASE @ R> BASE ! ;  ok
+            GN2 .S <2> 10 A  ok
         """
 
         self._run_script(input_lines, expected_output_lines)

@@ -9,11 +9,11 @@
   - [X] 测试启动和退出
   - [X] 对基本堆栈操作做测试
   - [X] 测试定义新词
-- [ ] 实现BASE
 - [ ] 支持TEST SUITE
   - [X] 实现注释
     - [X] 实现'('
     - [X] 实现'\'
+  - [X] 实现BASE
 - [X] 加IMMEDIATE标志，并在vm中使用它
 - [X] 实现无限循环
   - [X] 实现'BEGIN'和'AGAIN'
@@ -33,10 +33,30 @@ from typing import Optional
 from enum import Enum
 from .input import get_raw_input, get_input_line
 
+def int_to_base(n: int, base: int) -> str:
+    if not (2 <= base <= 36):
+        raise ValueError("Base must be between 2 and 36")
+    if n == 0:
+        return '0'
+
+    digits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    is_negative = n < 0
+    n = abs(n)
+    res = ""
+    while n:
+        res = digits[n % base] + res
+        n //= base
+    return '-' + res if is_negative else res
+
 class T4th:
     _version = '0.1.0'
 
-    MemAddress = Enum("MemAddress", "EXEC_START DP END", start=0)
+    MemAddress = Enum("MemAddress", "EXEC_START DP BASE END", start=0)
+
+    def _add_push_int_word(self, name, value):
+        fn = lambda: self._data_stack.append(value)
+        self._add_word(name)
+        self._memory_append(T4th._WordFunc(name, fn))
 
     class _WordFunc:
         FLAG_IMMEDIATE = 1 << 0
@@ -74,7 +94,9 @@ class T4th:
             p = self._memory[p-1].prev
         return p
 
-    def __init__(self):
+    def __init__(self, memory_size=65536):
+        self._memory_size = memory_size
+
         self._primitive_words = [
             T4th._WordFunc('(', self._word_paren, flag=T4th._WordFunc.FLAG_IMMEDIATE),
             T4th._WordFunc('\\', self._word_backslash, flag=T4th._WordFunc.FLAG_IMMEDIATE),
@@ -94,8 +116,6 @@ class T4th:
             T4th._WordFunc('!', self._word_mem_store),
             T4th._WordFunc('@', self._word_mem_fetch),
             T4th._WordFunc(',', self._word_comma),
-
-            T4th._WordFunc('DP', self._word_dp),
 
             T4th._WordFunc('>R', self._word_to_r),
             T4th._WordFunc('R>', self._word_r_from),
@@ -136,7 +156,7 @@ class T4th:
         ]
 
 
-        self._reset_vm()
+        self._init_vm()
 
     def _check_stack(self, depth):
         if len(self._data_stack) < depth:
@@ -148,6 +168,9 @@ class T4th:
 
     def _word_backslash(self):
         self._input_pos = len(self._input_buffer)
+
+    def _word_base(self):
+        self._data_stack.append(T4th.MemAddress.BASE.value)
 
     def _word_key(self):
         key = get_raw_input(self._in_stream)
@@ -162,12 +185,12 @@ class T4th:
     def _word_dot_s(self):
         print(f'<{len(self._data_stack)}> ', end='', flush=True)
         for v in self._data_stack:
-            print(v, end=' ', flush=True)
+            print(f'{int_to_base(v, self._base())}', end=' ', flush=True)
 
     def _word_dot(self):
         self._check_stack(1)
 
-        print(f'{self._data_stack.pop()} ', end='', flush=True)
+        print(f'{int_to_base(self._data_stack.pop(), self._base())} ', end='', flush=True)
 
     def _word_emit(self):
         self._check_stack(1)
@@ -266,6 +289,9 @@ class T4th:
         self._add_word(word)
         self._state = 'defining'
         self._memory_append(T4th._WordFunc(word, self._word_docol))
+
+    def _base(self):
+        return self._memory[T4th.MemAddress.BASE.value]
 
     def _here(self):
         return self._memory[T4th.MemAddress.DP.value]
@@ -402,14 +428,18 @@ class T4th:
         self._memory[self._here()] = v
         self._here_plus_one()
 
-    def _reset_vm(self):
+    def _init_vm(self):
         self._quit = False
-        self._memory = [0] * 65536
+        self._memory = [0] * self._memory_size
         self._memory[T4th.MemAddress.DP.value] = T4th.MemAddress.END.value
+        self._memory[T4th.MemAddress.BASE.value] = 10
 
         self._latest_word_ptr = 0 # 0表示无效的指针
 
         self._rescue()
+
+        self._add_push_int_word('DP', T4th.MemAddress.DP.value)
+        self._add_push_int_word('BASE', T4th.MemAddress.BASE.value)
 
         # Add primitive words to dictionary
         for word_func in self._primitive_words:
@@ -425,7 +455,6 @@ class T4th:
 
         self._pc = 0
         self._state = 'running'
-        self._base = 10
         self._in_stream = sys.stdin
         self._prompt = ''
 
@@ -435,7 +464,7 @@ class T4th:
         print(f'     R: {self._return_stack}')
         print(f'    PC: {self._pc}')
         print(f' STATE: {self._state}')
-        print(f'  BASE: {self._base}')
+        print(f'  BASE: {self._base()}')
         print(f'LATEST: {self._latest_word_ptr}')
 
         print(f'Memory: {self._memory[:self._memory[T4th.MemAddress.DP.value]]}')
@@ -489,7 +518,21 @@ class T4th:
 
         else:
             try:
-                value = int(word, self._base)
+                s = 1
+                if word[0] == '-':
+                    s = -1
+                    word = word[1:]
+
+                b = self._base()
+
+                if word[0] == '#':
+                    b = 10
+                    word = word[1:]
+                elif word[0] == '$':
+                    b = 16
+                    word = word[1:]
+
+                value = int(word, b) * s
 
                 if self._state == 'defining':
                     self._memory_append(self._find_word('(LITERAL)'))
