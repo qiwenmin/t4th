@@ -165,6 +165,20 @@ class TestT4th(unittest.TestCase):
 
         self._run_script(input_lines, expected_output_lines)
 
+    def test_paren(self):
+        "F.6.1.0080"
+        input_lines = """
+            ( A comment)1234 .
+            : pc1 ( A comment)1234 ; pc1 .
+        """
+
+        expected_output_lines = """
+            ( A comment)1234 . 1234  ok
+            : pc1 ( A comment)1234 ; pc1 . 1234  ok
+        """
+
+        self._run_script(input_lines, expected_output_lines)
+
 
 if __name__ == '__main__':
     unittest.main()

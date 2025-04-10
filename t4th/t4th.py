@@ -12,7 +12,7 @@
 - [ ] 实现BASE
 - [ ] 支持TEST SUITE
   - [ ] 实现注释
-    - [ ] 实现'('
+    - [X] 实现'('
     - [ ] 实现'\'
 - [X] 加IMMEDIATE标志，并在vm中使用它
 - [X] 实现无限循环
@@ -72,6 +72,8 @@ class T4th:
 
     def __init__(self):
         self._primitive_words = [
+            T4th._WordFunc('(', self._word_paren, flag=T4th._WordFunc.FLAG_IMMEDIATE),
+
             T4th._WordFunc('KEY', self._word_key),
 
             T4th._WordFunc('.S', self._word_dot_s),
@@ -133,6 +135,10 @@ class T4th:
     def _check_stack(self, depth):
         if len(self._data_stack) < depth:
             raise ValueError(f'Stack underflow: {len(self._data_stack)} < {depth}')
+
+    def _word_paren(self):
+        if not self._get_until_char(')'):
+            raise ValueError('unclosed parenthesis')
 
     def _word_key(self):
         key = get_raw_input(self._in_stream)
@@ -346,6 +352,14 @@ class T4th:
         while p > 0:
             print(self._memory[p-1].word, end=' ')
             p = self._memory[p-1].prev
+
+    def _get_until_char(self, c) -> bool:
+        while self._input_pos < len(self._input_buffer):
+            if self._input_buffer[self._input_pos] == c:
+                self._input_pos += 1
+                return True
+            self._input_pos += 1
+        return False
 
     def _get_next_word(self) -> Optional[str]:
         if self._input_pos >= len(self._input_buffer):
