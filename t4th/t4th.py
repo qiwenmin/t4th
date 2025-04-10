@@ -14,6 +14,14 @@
     - [X] 实现'('
     - [X] 实现'\\'
   - [X] 实现BASE
+  - [ ] S"
+  - [ ] ENVIRONMENT?
+  - [X] DEPTH
+  - [ ] TRUE
+  - [ ] FALSE
+  - [ ] [IF]
+  - [ ] [ELSE]
+  - [ ] [THEN]
 - [X] 加IMMEDIATE标志，并在vm中使用它
 - [X] 实现无限循环
   - [X] 实现'BEGIN'和'AGAIN'
@@ -114,6 +122,7 @@ class T4th:
             T4th._WordFunc('DROP', self._word_drop),
             T4th._WordFunc('SWAP', self._word_swap),
             T4th._WordFunc('OVER', self._word_over),
+            T4th._WordFunc('DEPTH', self._word_depth),
 
             T4th._WordFunc('!', self._word_mem_store),
             T4th._WordFunc('@', self._word_mem_fetch),
@@ -224,6 +233,9 @@ class T4th:
         self._check_stack(2)
 
         self._data_stack.append(self._data_stack[-2])
+
+    def _word_depth(self):
+        self._data_stack.append(len(self._data_stack))
 
     def _word_mem_store(self):
         self._check_stack(2)

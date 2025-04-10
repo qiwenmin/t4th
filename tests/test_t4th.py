@@ -301,5 +301,25 @@ class TestT4th(unittest.TestCase):
         self._run_script(input_lines, expected_output_lines)
 
 
+    def test_depth(self):
+        "F.6.1.1200"
+        input_lines = """
+            0 1 DEPTH .S
+            drop drop drop
+              0 DEPTH .S
+              drop drop
+                DEPTH .S
+        """
+        expected_output_lines = """
+            0 1 DEPTH .S <3> 0 1 2  ok
+            drop drop drop  ok
+              0 DEPTH .S <2> 0 1  ok
+              drop drop  ok
+                DEPTH .S <1> 0  ok
+        """
+
+        self._run_script(input_lines, expected_output_lines)
+
+
 if __name__ == '__main__':
     unittest.main()
