@@ -1,5 +1,7 @@
 : here dp @ ;
 
+: variable ( name -- ) create 0 , ;
+
 : 1+ 1 + ;
 
 : +! swap over @ + swap ! ;

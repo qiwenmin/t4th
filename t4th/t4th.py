@@ -21,6 +21,10 @@
     - [X] 实现'BRANCH'
 - [X] 实现'['和']'
 - [X] 实现POSTPONE
+- [ ] 实现CONSTANT
+  - [ ] 实现DOES>
+- [X] 实现VARIABLE
+  - [X] 修复CREATE的运行时行为问题
 """
 
 import os
@@ -118,6 +122,7 @@ class T4th:
             T4th._WordFunc(':', self._word_define),
             T4th._WordFunc(';', self._word_end_def, flag=T4th._WordFunc.FLAG_IMMEDIATE),
 
+            T4th._WordFunc('(CREATE)', self._word_create_p),
             T4th._WordFunc('CREATE', self._word_create),
 
             T4th._WordFunc('\'', self._word_tick),
@@ -272,12 +277,17 @@ class T4th:
         self._memory_append(self._find_word('EXIT'))
         self._state = 'running'
 
+    def _word_create_p(self):
+        this_xt = self._memory[self._pc - 1] + 1
+        self._data_stack.append(this_xt)
+
     def _word_create(self):
         word = self._get_next_word()
         if not word:
             raise ValueError('missing word name')
         word = word.upper()
         self._add_word(word)
+        self._memory_append(T4th._WordFunc(word, self._word_create_p))
 
     def _word_docol(self):
         self._return_stack.append(self._pc)

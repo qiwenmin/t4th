@@ -181,6 +181,38 @@ class TestT4th(unittest.TestCase):
 
         self._run_script(input_lines, expected_output_lines)
 
+    def test_create_body_does(self):
+        "F.6.1.1250" # TODO 这只用到了create，body和does还没有做。
+        input_lines = """
+            CREATE CR1 .s
+            CR1 here - .
+            1 ,
+            CR1 @ .
+        """
+        expected_output_lines = """
+            CREATE CR1 .s <0>  ok
+            CR1 here - . 0  ok
+            1 ,  ok
+            CR1 @ . 1  ok
+        """
+
+        self._run_script(input_lines, expected_output_lines)
+
+    def test_variable(self):
+        "F.6.1.2410"
+        input_lines = """
+            VARIABLE V1
+            123 V1 !
+            V1 @ .S
+        """
+        expected_output_lines = """
+            VARIABLE V1  ok
+            123 V1 !  ok
+            V1 @ .S <1> 123  ok
+        """
+
+        self._run_script(input_lines, expected_output_lines)
+
 
 if __name__ == '__main__':
     unittest.main()
