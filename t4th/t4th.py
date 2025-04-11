@@ -41,6 +41,7 @@ from typing import Optional
 from enum import Enum
 from .input import get_raw_input, get_input_line
 
+
 def int_to_base(n: int, base: int) -> str:
     if not (2 <= base <= 36):
         raise ValueError("Base must be between 2 and 36")
@@ -56,116 +57,134 @@ def int_to_base(n: int, base: int) -> str:
         n //= base
     return '-' + res if is_negative else res
 
+
 class T4th:
     _version = '0.1.0'
 
-    MemAddress = Enum("MemAddress", "DP BASE END", start=0)
+    MemAddress = Enum("MemAddress", "EXEC_START DP BASE END", start=0)
 
     def _add_push_int_word(self, name, value):
         fn = lambda: self._data_stack.append(value)
-        self._add_word(name)
-        self._memory_append(T4th._WordFunc(name, fn))
+        self._add_word(T4th._Word(name, fn))
 
-    class _WordFunc:
+    class _Word:
         FLAG_IMMEDIATE = 1 << 0
 
-        def __init__(self, word, func, flag=0):
-            self.word = word
-            self.func = func
+        def __init__(self, word_name:str, ptr:int=0, flag=0, prev:int=0):
+            self.word_name = word_name.upper()
+            self.ptr = ptr
             self.flag = flag
-        def __call__(self):
-            self.func()
-        def __str__(self):
-            return f"`{self.word}`{'I' if self.is_immediate() else ''}"
-        def __repr__(self):
-            return self.__str__()
-        def is_immediate(self):
-            return (self.flag & T4th._WordFunc.FLAG_IMMEDIATE) != 0
-
-    class _WordHeader:
-        def __init__(self, word:str, prev:int):
-            self.word = word
             self.prev = prev
+
         def __str__(self):
-            return f"[{self.word} {self.prev}]"
+            return f"`{self.word_name}`{'I' if self.is_immediate() else ''}/{self.prev}"
+
         def __repr__(self):
             return self.__str__()
 
-    def _add_word(self, word:str):
-        wh = self._WordHeader(word, self._latest_word_ptr)
-        self._memory_append(wh)
-        self._latest_word_ptr = self._here()
+        def is_immediate(self):
+            return (self.flag & T4th._Word.FLAG_IMMEDIATE) != 0
 
-    def _find_word(self, word:str) -> int:
+    class _PrimitiveWord:
+        def __init__(self, name:str, ptr:int):
+            self.name = name.upper()
+            self.ptr = ptr
+
+        def __call__(self, *args):
+            self.ptr(*args)
+
+        def __str__(self):
+            return f"`{self.name}`"
+
+        def __repr__(self):
+            return self.__str__()
+
+    def _add_word(self, word:_Word):
+        word.prev = self._latest_word_ptr
+        self._latest_word_ptr = self._here()
+        self._memory_append(word)
+
+    def _find_word_or_none(self, word_name:str) -> Optional[_Word]:
+        word_name = word_name.upper()
         p = self._latest_word_ptr
-        while p > 0 and self._memory[p-1].word!= word:
-            p = self._memory[p-1].prev
-        return p
+        while p > 0 and self._memory[p].word_name!= word_name:
+            p = self._memory[p].prev
+        if p == 0:
+            return None
+        return self._memory[p]
+
+    def _find_word(self, word_name:str) -> Optional[_Word]:
+        word = self._find_word_or_none(word_name)
+        if word is None:
+            raise ValueError(f"Undefined word: `{word_name}`")
+        return word
 
     def __init__(self, memory_size=65536):
         self._memory_size = memory_size
 
         self._primitive_words = [
-            T4th._WordFunc('(', self._word_paren, flag=T4th._WordFunc.FLAG_IMMEDIATE),
-            T4th._WordFunc('\\', self._word_backslash, flag=T4th._WordFunc.FLAG_IMMEDIATE),
+            (T4th._Word('.VM'), self._print_vm),
 
-            T4th._WordFunc('BASE', self._word_base),
+            (T4th._Word('DP'), lambda: self._data_stack.append(T4th.MemAddress.DP.value)),
+            (T4th._Word('BASE'), lambda: self._data_stack.append(T4th.MemAddress.BASE.value)),
 
-            T4th._WordFunc('KEY', self._word_key),
+            (T4th._Word('.S'), self._word_dot_s),
+            (T4th._Word('.'), self._word_dot),
+            (T4th._Word('EMIT'), self._word_emit),
+            (T4th._Word('CR'), self._word_cr),
 
-            T4th._WordFunc('.S', self._word_dot_s),
-            T4th._WordFunc('.', self._word_dot),
-            T4th._WordFunc('EMIT', self._word_emit),
-            T4th._WordFunc('CR', self._word_cr),
+            (T4th._Word('WORDS'), self._word_words),
 
-            T4th._WordFunc('DUP', self._word_dup),
-            T4th._WordFunc('DROP', self._word_drop),
-            T4th._WordFunc('SWAP', self._word_swap),
-            T4th._WordFunc('OVER', self._word_over),
-            T4th._WordFunc('DEPTH', self._word_depth),
+            (T4th._Word('DOCOL'), self._word_docol),
+            (T4th._Word(':'), self._word_define),
+            (T4th._Word(';', flag=T4th._Word.FLAG_IMMEDIATE), self._word_end_def),
+            (T4th._Word('EXIT'), self._word_exit),
 
-            T4th._WordFunc('!', self._word_mem_store),
-            T4th._WordFunc('@', self._word_mem_fetch),
-            T4th._WordFunc(',', self._word_comma),
+            (T4th._Word('(', flag=T4th._Word.FLAG_IMMEDIATE), self._word_paren),
+            (T4th._Word('\\', flag=T4th._Word.FLAG_IMMEDIATE), self._word_backslash),
 
-            T4th._WordFunc('>R', self._word_to_r),
-            T4th._WordFunc('R>', self._word_r_from),
+            (T4th._Word('KEY'), self._word_key),
 
-            T4th._WordFunc('+', self._word_add),
-            T4th._WordFunc('-', self._word_sub),
-            T4th._WordFunc('*', self._word_mul),
-            T4th._WordFunc('/', self._word_div),
+            (T4th._Word('DUP'), self._word_dup),
+            (T4th._Word('DROP'), self._word_drop),
+            (T4th._Word('SWAP'), self._word_swap),
+            (T4th._Word('OVER'), self._word_over),
+            (T4th._Word('DEPTH'), self._word_depth),
 
-            T4th._WordFunc('EXIT', self._word_exit),
-            T4th._WordFunc('LITERAL', self._word_literal, flag=T4th._WordFunc.FLAG_IMMEDIATE),
-            T4th._WordFunc('(LITERAL)', self._word_literal_p),
+            (T4th._Word('!'), self._word_mem_store),
+            (T4th._Word('@'), self._word_mem_fetch),
+            (T4th._Word(','), self._word_comma),
 
-            T4th._WordFunc(']', self._word_right_bracket),
-            T4th._WordFunc('[', self._word_left_bracket, flag=T4th._WordFunc.FLAG_IMMEDIATE),
+            (T4th._Word('>R'), self._word_to_r),
+            (T4th._Word('R>'), self._word_r_from),
 
-            T4th._WordFunc('IMMEDIATE', self._word_immediate, flag=T4th._WordFunc.FLAG_IMMEDIATE),
+            (T4th._Word('+'), self._word_add),
+            (T4th._Word('-'), self._word_sub),
+            (T4th._Word('*'), self._word_mul),
+            (T4th._Word('/'), self._word_div),
 
-            T4th._WordFunc('BRANCH', self._word_branch),
+            (T4th._Word('LITERAL', flag=T4th._Word.FLAG_IMMEDIATE), self._word_literal),
+            (T4th._Word('(LITERAL)'), self._word_literal_p),
 
-            T4th._WordFunc('BYE', self._word_bye),
+            (T4th._Word(']'), self._word_right_bracket),
+            (T4th._Word('[', flag=T4th._Word.FLAG_IMMEDIATE), self._word_left_bracket),
 
-            T4th._WordFunc(':', self._word_define),
-            T4th._WordFunc(';', self._word_end_def, flag=T4th._WordFunc.FLAG_IMMEDIATE),
+            (T4th._Word('IMMEDIATE', flag=T4th._Word.FLAG_IMMEDIATE), self._word_immediate),
 
-            T4th._WordFunc('CREATE', self._word_create),
+            (T4th._Word('BRANCH'), self._word_branch),
 
-            T4th._WordFunc('DOES>', self._word_does),
+            (T4th._Word('BYE'), self._word_bye),
 
-            T4th._WordFunc('\'', self._word_tick),
-            T4th._WordFunc('EXECUTE', self._word_execute),
+            (T4th._Word('(CREATE)'), self._word_create_p),
+            (T4th._Word('CREATE'), self._word_create),
 
-            T4th._WordFunc('POSTPONE', self._word_postpone, flag=T4th._WordFunc.FLAG_IMMEDIATE),
+            (T4th._Word('DOES>'), self._word_does),
 
-            T4th._WordFunc('WORDS', self._word_words),
+            (T4th._Word('\''), self._word_tick),
+            (T4th._Word('EXECUTE'), self._word_execute),
 
-            T4th._WordFunc('.VM', self._print_vm),
+            (T4th._Word('POSTPONE', flag=T4th._Word.FLAG_IMMEDIATE), self._word_postpone),
         ]
-
 
         self._init_vm()
 
@@ -175,13 +194,10 @@ class T4th:
 
     def _word_paren(self):
         if not self._get_until_char(')'):
-            raise ValueError('unclosed parenthesis')
+            raise ValueError('Unclosed parenthesis')
 
     def _word_backslash(self):
         self._input_pos = len(self._input_buffer)
-
-    def _word_base(self):
-        self._data_stack.append(T4th.MemAddress.BASE.value)
 
     def _word_key(self):
         key = get_raw_input(self._in_stream)
@@ -256,9 +272,6 @@ class T4th:
 
         self._memory_append(self._data_stack.pop())
 
-    def _word_dp(self):
-        self._data_stack.append(T4th.MemAddress.DP.value)
-
     def _word_to_r(self):
         self._check_stack(1)
 
@@ -290,33 +303,34 @@ class T4th:
         a = self._data_stack.pop()
         b = self._data_stack.pop()
         if b == 0:
-            raise ValueError('division by zero')
+            raise ValueError('Division by zero')
 
         self._data_stack.append(b // a)
 
+    def _word_docol(self):
+        self._return_stack.append(self._pc)
+        from_pc = self._pc - 1
+        self._pc = self._memory[from_pc] + 1
+
     def _word_define(self):
-        word = self._get_next_word()
-        if not word:
-            raise ValueError('missing word name')
+        word_name = self._get_next_word()
 
-        word = word.upper()
-        self._add_word(word)
+        docol = self._find_word('DOCOL')
+        w = T4th._Word(word_name, self._here() + 1, prev=self._latest_word_ptr)
+        self._add_word(w)
+        self._memory_append(self._memory[docol.ptr])
+
         self._state = 'defining'
-        next_pc = self._here() + 1
-        self._memory_append(T4th._WordFunc(word, self._create_docol(next_pc)))
-
-    def _create_docol(self, next_pc):
-        _self = self
-        def _docol():
-            _self._return_stack.append(_self._pc)
-            _self._pc = next_pc
-        return _docol
 
     def _word_exit(self):
         if len(self._return_stack) == 0:
-            raise ValueError('return stack empty')
+            raise ValueError('Return stack empty')
 
         self._pc = self._return_stack.pop()
+
+    def _word_end_def(self):
+        self._memory_append(self._find_word('EXIT').ptr)
+        self._state = 'running'
 
     def _base(self):
         return self._memory[T4th.MemAddress.BASE.value]
@@ -324,57 +338,44 @@ class T4th:
     def _here(self):
         return self._memory[T4th.MemAddress.DP.value]
 
-    def _here_plus_one(self):
-        self._memory[T4th.MemAddress.DP.value] += 1
+    def _word_create_p(self):
+        from_pc = self._pc - 1
+        p = self._memory[from_pc] + 1
 
-    def _word_end_def(self):
-        self._memory_append(self._find_word('EXIT'))
-        self._state = 'running'
-
-    def _create_create_p(self, xt):
-        _self = self
-        def _create_p():
-            _self._data_stack.append(xt)
-        return _create_p
+        self._data_stack.append(p)
 
     def _word_create(self):
-        word = self._get_next_word()
-        if not word:
-            raise ValueError('missing word name')
-        word = word.upper()
-        self._add_word(word)
-        xt = self._here() + 1
-        self._memory_append(T4th._WordFunc(word, self._create_create_p(xt)))
+        word_name = self._get_next_word()
 
-    def _create_does_func(self, xt, jmp_pc):
-        """
-        生成的函数
-        1. 将当前pc压入返回栈
-        2. 将当前词的数据区的指针放到数据栈顶
-        3. 跳到之前已经编译了的DOES>后的代码位置
-        """
-        _self = self
-        def _does_func():
-            _self._return_stack.append(self._pc)
-            _self._data_stack.append(xt)
-            _self._pc = jmp_pc
+        create_p = self._find_word('(CREATE)')
+        w = T4th._Word(word_name, self._here() + 1, prev=self._latest_word_ptr)
+        self._add_word(w)
+        self._memory_append(self._memory[create_p.ptr])
 
-        return _does_func
+    def _new_does_p(self, jmp_ptr):
+        def does_p():
+            from_pc = self._pc - 1
+            p = self._memory[from_pc] + 1
+            self._data_stack.append(p)
+
+            self._return_stack.append(self._pc)
+            self._pc = jmp_ptr
+
+        return does_p
 
     def _word_does(self):
-        here = self._here()
-        latest = self._latest_word_ptr
-        xt = latest + 1
-        jmp_pc = self._pc
-        does_func = self._create_does_func(xt, jmp_pc)
-        self._memory[latest] = T4th._WordFunc(f'(DOES/{jmp_pc})', does_func)
+        jmp_ptr = self._pc
+        does_p = T4th._PrimitiveWord('(DOES>)', self._new_does_p(jmp_ptr))
+        this_word = self._memory[self._latest_word_ptr]
+        self._memory[this_word.ptr] = does_p
+
         self._word_exit()
 
     def _word_literal(self):
         self._check_stack(1)
 
-        xt = self._find_word('(LITERAL)')
-        self._memory_append(xt)
+        w = self._find_word('(LITERAL)')
+        self._memory_append(w.ptr)
         self._memory_append(self._data_stack.pop())
 
     def _word_literal_p(self):
@@ -390,51 +391,50 @@ class T4th:
 
     def _word_immediate(self):
         if self._latest_word_ptr > 0:
-            self._memory[self._latest_word_ptr].flag |= T4th._WordFunc.FLAG_IMMEDIATE
+            self._memory[self._latest_word_ptr].flag |= T4th._Word.FLAG_IMMEDIATE
 
     def _word_branch(self):
-        self._pc += (self._memory[self._pc] -1)
+        self._pc += (self._memory[self._pc] - 1)
 
     def _word_bye(self):
         print()
         self._quit = True
 
     def _word_tick(self):
-        word = self._get_next_word()
-        if not word:
-            raise ValueError('missing word name')
-        xt = self._find_word(word.upper())
-        if xt is None:
-            raise ValueError(f'unknown word "{word}"')
-        self._data_stack.append(xt)
+        word_name = self._get_next_word()
+        w = self._find_word(word_name)
+        self._data_stack.append(w.ptr)
 
     def _word_execute(self):
         self._check_stack(1)
 
         xt = self._data_stack.pop()
-        fn = self._memory[xt]
-        fn()
+
+        from_pc = self._pc - 1
+        p_backup = self._memory[from_pc]
+        self._memory[from_pc] = xt
+
+        try:
+            self._memory[xt]()
+        finally:
+            self._memory[from_pc] = p_backup
 
     def _word_postpone(self):
-        word = self._get_next_word()
-        if not word:
-            raise ValueError('missing word name')
-        fn_ptr = self._find_word(word.upper())
-        if fn_ptr is None:
-            raise ValueError(f'unknown word "{word}"')
-        if self._memory[fn_ptr].is_immediate():
-            self._memory_append(fn_ptr)
+        word_name = self._get_next_word()
+        w = self._find_word(word_name)
+        if w.is_immediate():
+            self._memory_append(w.ptr)
         else:
-            self._memory_append(self._find_word('(LITERAL)'))
-            self._memory_append(fn_ptr)
-            self._memory_append(self._find_word(','))
+            self._memory_append(self._find_word('(LITERAL)').ptr)
+            self._memory_append(w.ptr)
+            self._memory_append(self._find_word(',').ptr)
 
     def _word_words(self):
         print()
         p = self._latest_word_ptr
         while p > 0:
-            print(self._memory[p-1].word, end=' ')
-            p = self._memory[p-1].prev
+            print(self._memory[p].word_name, end=' ')
+            p = self._memory[p].prev
 
     def _get_until_char(self, c) -> bool:
         while self._input_pos < len(self._input_buffer):
@@ -444,11 +444,9 @@ class T4th:
             self._input_pos += 1
         return False
 
-    def _get_next_word(self) -> Optional[str]:
+    def _get_next_word_or_none(self) -> Optional[str]:
         if self._input_pos >= len(self._input_buffer):
-            # self._input_buffer = self._in_stream.readline()
             self._input_buffer = get_input_line(prompt=self._prompt, stream=self._in_stream)
-            # print(' ', end='', flush=True)
             if self._input_buffer is None:
                 self._input_buffer = ''
                 return None
@@ -465,11 +463,17 @@ class T4th:
 
         return word
 
+    def _get_next_word(self) -> str:
+        word = self._get_next_word_or_none()
+        if word is None:
+            raise ValueError('Could not get word name')
+        return word
+
     def _memory_append(self, v):
         if self._here() >= len(self._memory):
-            raise ValueError('memory overflow')
+            raise ValueError('Memory overflow')
         self._memory[self._here()] = v
-        self._here_plus_one()
+        self._memory[T4th.MemAddress.DP.value] += 1
 
     def _init_vm(self):
         self._quit = False
@@ -481,13 +485,12 @@ class T4th:
 
         self._rescue()
 
-        self._add_push_int_word('DP', T4th.MemAddress.DP.value)
-        self._add_push_int_word('BASE', T4th.MemAddress.BASE.value)
-
         # Add primitive words to dictionary
-        for word_func in self._primitive_words:
-            self._add_word(word_func.word)
-            self._memory_append(word_func)
+        for (w, f) in self._primitive_words:
+            w.ptr = self._here() + 1
+            self._add_word(w)
+            self._memory_append(T4th._PrimitiveWord(w.word_name, f))
+
 
     def _rescue(self):
         self._data_stack = []
@@ -515,14 +518,14 @@ class T4th:
     def interpret(self):
         while not self._quit:
             try:
-                word = self._get_next_word()
-                if word is None:
+                word_name = self._get_next_word_or_none()
+                if word_name is None:
                     break # End of input
                 self._prompt = ' ok\n'
-                if word == '':
+                if word_name == '':
                     continue
 
-                self._execute_word(word)
+                self._execute_word(word_name)
 
             except Exception as e:
                 print()
@@ -535,50 +538,46 @@ class T4th:
                 self._rescue()
                 self._prompt = ''
 
-    def _execute_word(self, word):
-        upper_word = word.upper()
-        word_ptr = self._find_word(upper_word)
+    def _execute_word(self, word_name):
+        word = self._find_word_or_none(word_name)
 
-        if word_ptr:
-            if self._state == 'defining' and not self._memory[word_ptr].is_immediate():
-                self._memory_append(word_ptr)
+        if word:
+            if self._state == 'defining' and not word.is_immediate():
+                self._memory_append(word.ptr)
             else:
-                self._memory[word_ptr]()
+                self._pc = T4th.MemAddress.EXEC_START.value
+                self._memory[T4th.MemAddress.EXEC_START.value] = word.ptr
 
-                while self._return_stack:
+                while self._pc != T4th.MemAddress.EXEC_START.value + 1:
                     fn_idx = self._memory[self._pc]
                     self._pc += 1
-                    fn = self._memory[fn_idx]
-                    if not isinstance(fn, T4th._WordFunc):
-                        raise ValueError(f'Invalid xt {fn_idx}')
-
-                    fn()
+                    self._memory[fn_idx]()
 
         else:
             try:
                 s = 1
-                if word[0] == '-':
+                if word_name[0] == '-':
                     s = -1
-                    word = word[1:]
+                    word_name = word_name[1:]
 
                 b = self._base()
 
-                if word[0] == '#':
+                if word_name[0] == '#':
                     b = 10
-                    word = word[1:]
-                elif word[0] == '$':
+                    word_name = word_name[1:]
+                elif word_name[0] == '$':
                     b = 16
-                    word = word[1:]
+                    word_name = word_name[1:]
 
-                value = int(word, b) * s
+                value = int(word_name, b) * s
 
                 if self._state == 'defining':
-                    self._memory_append(self._find_word('(LITERAL)'))
+                    self._memory_append(self._find_word('(LITERAL)').ptr)
                     self._memory_append(value)
                 else:
                     self._data_stack.append(value)
             except ValueError:
-                raise ValueError(f'Unknown word "{word}"')
+                raise ValueError(f'Unknown word "{word_name}"')
 
     def load_and_run_file(self, filename):
         try:

@@ -3,12 +3,7 @@
 : hex $10 base ! ;
 : decimal #10 base ! ;
 
-: variable create 0 , ;
-: constant create , does> @ ;
-
 : 1+ 1 + ;
-
-: >body 1+ ;
 
 : +! swap over @ + swap ! ;
 : allot dp +! ;
@@ -21,3 +16,8 @@
 : again (literal) branch , here - 1+ , ; immediate
 
 : ['] ' postpone literal ; immediate
+
+: variable create 0 , ;
+: constant create , does> @ ;
+
+: >body 1+ ;
