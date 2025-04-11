@@ -279,7 +279,7 @@ class TestT4th(unittest.TestCase):
         """
         expected_output_lines = """
             HEX  ok
-            : GN2 \\ ( -- 16 10 )  ok
+            : GN2 \\ ( -- 16 10 )  compiled
                BASE @ >R HEX BASE @ DECIMAL BASE @ R> BASE ! ;  ok
             GN2 .S <2> 10 A  ok
         """

@@ -72,6 +72,7 @@ class T4th:
 
     class _Word:
         FLAG_IMMEDIATE = 1 << 0
+        FLAG_NON_INTERACTIVE = 1 << 1
 
         def __init__(self, word_name:str, ptr:int=0, flag=0, prev:int=0):
             self.word_name = word_name.upper()
@@ -87,6 +88,9 @@ class T4th:
 
         def is_immediate(self):
             return (self.flag & T4th._Word.FLAG_IMMEDIATE) != 0
+
+        def is_non_interactive(self):
+            return (self.flag & T4th._Word.FLAG_NON_INTERACTIVE)!= 0
 
     class _PrimitiveWord:
         def __init__(self, name:str, ptr:int):
@@ -132,6 +136,9 @@ class T4th:
     def __init__(self, memory_size=65536):
         self._memory_size = memory_size
 
+        IM = T4th._Word.FLAG_IMMEDIATE
+        NI = T4th._Word.FLAG_NON_INTERACTIVE
+
         self._primitive_words = [
             (T4th._Word('.VM'), self._print_vm),
 
@@ -145,13 +152,13 @@ class T4th:
 
             (T4th._Word('WORDS'), self._word_words),
 
-            (T4th._Word('DOCOL'), self._word_docol),
+            (T4th._Word('DOCOL', flag=NI), self._word_docol),
             (T4th._Word(':'), self._word_define),
-            (T4th._Word(';', flag=T4th._Word.FLAG_IMMEDIATE), self._word_end_def),
-            (T4th._Word('EXIT'), self._word_exit),
+            (T4th._Word(';', flag=IM), self._word_end_def),
+            (T4th._Word('EXIT', flag=NI), self._word_exit),
 
-            (T4th._Word('(', flag=T4th._Word.FLAG_IMMEDIATE), self._word_paren),
-            (T4th._Word('\\', flag=T4th._Word.FLAG_IMMEDIATE), self._word_backslash),
+            (T4th._Word('(', flag=IM), self._word_paren),
+            (T4th._Word('\\', flag=IM), self._word_backslash),
 
             (T4th._Word('KEY'), self._word_key),
 
@@ -173,27 +180,27 @@ class T4th:
             (T4th._Word('*'), self._word_mul),
             (T4th._Word('/'), self._word_div),
 
-            (T4th._Word('LITERAL', flag=T4th._Word.FLAG_IMMEDIATE), self._word_literal),
-            (T4th._Word('(LITERAL)'), self._word_literal_p),
+            (T4th._Word('LITERAL', flag=IM|NI), self._word_literal),
+            (T4th._Word('(LITERAL)', flag=NI), self._word_literal_p),
 
             (T4th._Word(']'), self._word_right_bracket),
-            (T4th._Word('[', flag=T4th._Word.FLAG_IMMEDIATE), self._word_left_bracket),
+            (T4th._Word('[', flag=IM|NI), self._word_left_bracket),
 
-            (T4th._Word('IMMEDIATE', flag=T4th._Word.FLAG_IMMEDIATE), self._word_immediate),
+            (T4th._Word('IMMEDIATE', flag=IM), self._word_immediate),
 
-            (T4th._Word('BRANCH'), self._word_branch),
+            (T4th._Word('BRANCH', flag=NI), self._word_branch),
 
             (T4th._Word('BYE'), self._word_bye),
 
-            (T4th._Word('(CREATE)'), self._word_create_p),
+            (T4th._Word('(CREATE)', flag=NI), self._word_create_p),
             (T4th._Word('CREATE'), self._word_create),
 
-            (T4th._Word('DOES>'), self._word_does),
+            (T4th._Word('DOES>', flag=NI), self._word_does),
 
             (T4th._Word('\''), self._word_tick),
             (T4th._Word('EXECUTE'), self._word_execute),
 
-            (T4th._Word('POSTPONE', flag=T4th._Word.FLAG_IMMEDIATE), self._word_postpone),
+            (T4th._Word('POSTPONE', flag=IM|NI), self._word_postpone),
 
             (T4th._Word('FORGET'), self._word_forget),
         ]
@@ -466,12 +473,16 @@ class T4th:
         return False
 
     def _get_next_word_or_none(self) -> Optional[str]:
-        if self._input_pos >= len(self._input_buffer):
+        if self._input_pos == 0:
             self._input_buffer = get_input_line(prompt=self._prompt, stream=self._in_stream)
             if self._input_buffer is None:
                 self._input_buffer = ''
                 return None
             self._input_pos = 0
+
+        if self._input_pos >= len(self._input_buffer):
+            self._input_pos = 0
+            return ''
 
         word = ''
         while self._input_pos < len(self._input_buffer):
@@ -486,7 +497,7 @@ class T4th:
 
     def _get_next_word(self) -> str:
         word = self._get_next_word_or_none()
-        if word is None:
+        if word is None or word == '':
             raise ValueError('Could not get word name')
         return word
 
@@ -554,7 +565,9 @@ class T4th:
                 word_name = self._get_next_word_or_none()
                 if word_name is None:
                     break # End of input
-                self._prompt = ' ok\n'
+
+                self._prompt = ' ok\n' if self._state == 'running' else ' compiled\n'
+
                 if word_name == '':
                     continue
 
@@ -578,6 +591,9 @@ class T4th:
             if self._state == 'defining' and not word.is_immediate():
                 self._memory_append(word.ptr)
             else:
+                if self._state == 'running' and word.is_non_interactive():
+                    raise ValueError(f'Non-interactive word "{word_name}"')
+
                 self._pc = T4th.MemAddress.EXEC_START.value
                 self._memory[T4th.MemAddress.EXEC_START.value] = word.ptr
 
