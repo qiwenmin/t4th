@@ -139,6 +139,20 @@ class TestT4th(unittest.TestCase):
 
         self._run_script(input_lines, expected_output_lines)
 
+    def test_forget(self):
+        input_lines = """
+            here create foo create bar forget foo here - .
+            forget dup
+        """
+
+        expected_output_lines = """
+            here create foo create bar forget foo here - . 0  ok
+            forget dup
+            Error: Cannot forget `dup`
+        """
+
+        self._run_script(input_lines, expected_output_lines)
+
     def test_postpone(self):
         "F.6.1.2033"
         input_lines = """

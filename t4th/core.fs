@@ -21,3 +21,5 @@
 : constant create , does> @ ;
 
 : >body 1+ ;
+
+CREATE USER-WORD-BEGIN

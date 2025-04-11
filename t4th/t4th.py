@@ -15,6 +15,8 @@
     - [X] 实现'\\'
   - [X] 实现BASE
   - [ ] S"
+    - [ ] C"
+    - [ ] COUNT
   - [ ] ENVIRONMENT?
   - [X] DEPTH
   - [ ] TRUE
@@ -33,6 +35,7 @@
   - [X] 实现DOES>
 - [X] 实现VARIABLE
   - [X] 修复CREATE的运行时行为问题
+- [X] FORGET
 """
 
 import os
@@ -104,11 +107,18 @@ class T4th:
         self._latest_word_ptr = self._here()
         self._memory_append(word)
 
-    def _find_word_or_none(self, word_name:str) -> Optional[_Word]:
+    def _find_word_ptr(self, word_name:str) -> int:
         word_name = word_name.upper()
         p = self._latest_word_ptr
+        if self._state == 'defining':
+            p = self._memory[p].prev
+
         while p > 0 and self._memory[p].word_name!= word_name:
             p = self._memory[p].prev
+        return p
+
+    def _find_word_or_none(self, word_name:str) -> Optional[_Word]:
+        p = self._find_word_ptr(word_name)
         if p == 0:
             return None
         return self._memory[p]
@@ -184,6 +194,8 @@ class T4th:
             (T4th._Word('EXECUTE'), self._word_execute),
 
             (T4th._Word('POSTPONE', flag=T4th._Word.FLAG_IMMEDIATE), self._word_postpone),
+
+            (T4th._Word('FORGET'), self._word_forget),
         ]
 
         self._init_vm()
@@ -429,6 +441,15 @@ class T4th:
             self._memory_append(w.ptr)
             self._memory_append(self._find_word(',').ptr)
 
+    def _word_forget(self):
+        p_begin = self._find_word_ptr('USER-WORD-BEGIN')
+        word_name = self._get_next_word()
+        p = self._find_word_ptr(word_name)
+        if p > p_begin:
+            self._forget_p(p)
+        else:
+            raise ValueError(f'Cannot forget `{word_name}`')
+
     def _word_words(self):
         print()
         p = self._latest_word_ptr
@@ -482,6 +503,7 @@ class T4th:
         self._memory[T4th.MemAddress.BASE.value] = 10
 
         self._latest_word_ptr = 0 # 0表示无效的指针
+        self._state = 'running'
 
         self._rescue()
 
@@ -493,6 +515,12 @@ class T4th:
 
 
     def _rescue(self):
+        # 在定义词的过程中恢复
+        if self._state == 'defining' and self._latest_word_ptr > 0:
+            # 清理掉最后一个定义的词
+            self._forget_p(self._latest_word_ptr)
+
+
         self._data_stack = []
         self._return_stack = []
 
@@ -503,6 +531,11 @@ class T4th:
         self._state = 'running'
         self._in_stream = sys.stdin
         self._prompt = ''
+
+    def _forget_p(self, p:int):
+        w = self._memory[p]
+        self._memory[T4th.MemAddress.DP.value] = p
+        self._latest_word_ptr = w.prev
 
     def _print_vm(self):
         print()
