@@ -334,6 +334,43 @@ class TestT4th(unittest.TestCase):
 
         self._run_script(input_lines, expected_output_lines)
 
+    def test_if_then_else(self):
+        "F.6.1.1700"
+        input_lines = """
+            TRUE CONSTANT <TRUE>
+            FALSE CONSTANT <FALSE>
+            : GI1 IF 123 THEN ;
+            : GI2 IF 123 ELSE 234 THEN ;
+             0 GI1 .S
+             1 GI1 .
+            -1 GI1 .
+             0 GI2 .
+             1 GI2 .
+            -1 GI1 .
+            \ Multiple ELSEs in an IF statement
+            : melse IF 1 ELSE 2 ELSE 3 ELSE 4 ELSE 5 THEN ;
+            <FALSE> melse . .
+            <TRUE>  melse . . .
+        """
+        expected_output_lines = """
+            TRUE CONSTANT <TRUE>  ok
+            FALSE CONSTANT <FALSE>  ok
+            : GI1 IF 123 THEN ;  ok
+            : GI2 IF 123 ELSE 234 THEN ;  ok
+             0 GI1 .S <0>  ok
+             1 GI1 . 123  ok
+            -1 GI1 . 123  ok
+             0 GI2 . 234  ok
+             1 GI2 . 123  ok
+            -1 GI1 . 123  ok
+            \ Multiple ELSEs in an IF statement  ok
+            : melse IF 1 ELSE 2 ELSE 3 ELSE 4 ELSE 5 THEN ;  ok
+            <FALSE> melse . . 4 2  ok
+            <TRUE>  melse . . . 5 3 1  ok
+        """
+
+        self._run_script(input_lines, expected_output_lines)
+
 
 if __name__ == '__main__':
     unittest.main()

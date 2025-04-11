@@ -19,8 +19,11 @@
     - [ ] COUNT
   - [ ] ENVIRONMENT?
   - [X] DEPTH
-  - [ ] TRUE
-  - [ ] FALSE
+  - [X] TRUE
+  - [X] FALSE
+  - [X] IF/ELSE/THEN
+    - [X] >MARK/>RESOLVE
+    - [X] 0BRANCH
   - [ ] [IF]
   - [ ] [ELSE]
   - [ ] [THEN]
@@ -189,6 +192,7 @@ class T4th:
             (T4th._Word('IMMEDIATE', flag=IM), self._word_immediate),
 
             (T4th._Word('BRANCH', flag=NI), self._word_branch),
+            (T4th._Word('0BRANCH', flag=NI), self._word_0branch),
 
             (T4th._Word('BYE'), self._word_bye),
 
@@ -413,7 +417,15 @@ class T4th:
             self._memory[self._latest_word_ptr].flag |= T4th._Word.FLAG_IMMEDIATE
 
     def _word_branch(self):
-        self._pc += (self._memory[self._pc] - 1)
+        self._pc = self._memory[self._pc]
+
+    def _word_0branch(self):
+        self._check_stack(1)
+
+        if self._data_stack.pop() == 0:
+            self._pc = self._memory[self._pc]
+        else:
+            self._pc += 1
 
     def _word_bye(self):
         print()

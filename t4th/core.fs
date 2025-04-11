@@ -13,7 +13,7 @@
 : cells ;
 
 : begin here ; immediate
-: again (literal) branch , here - 1+ , ; immediate
+: again (literal) branch , , ; immediate
 
 : ['] ' postpone literal ; immediate
 
@@ -22,4 +22,18 @@
 
 : >body 1+ ;
 
-CREATE USER-WORD-BEGIN
+-1 constant true
+0 constant false
+
+: >mark    ( -- addr )  here 0 , ;           \ 记下当前位置，填0做占位
+: >resolve ( addr -- )  here swap ! ;        \ 将 addr 处的0改为当前地址
+
+: if ( -- ) postpone 0branch >mark ; immediate
+
+: else ( addr1 -- addr2 )
+  postpone branch >mark
+  swap >resolve ; immediate
+
+: then ( addr -- ) >resolve ; immediate
+
+create user-word-begin
