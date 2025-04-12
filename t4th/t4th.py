@@ -44,7 +44,7 @@
 import os
 import sys
 from typing import Optional
-from enum import Enum
+from enum import Enum, auto
 from .input import get_raw_input, get_input_line
 
 
@@ -67,7 +67,21 @@ def int_to_base(n: int, base: int) -> str:
 class T4th:
     _version = '0.1.0'
 
-    MemAddress = Enum("MemAddress", "EXEC_START DP BASE STATE END", start=0)
+    class MemAddress(Enum):
+        IN_BUFFER = 0
+        IN_BUFFER_LEN = 256
+
+        PAD_BUFFER = IN_BUFFER + IN_BUFFER_LEN
+        PAD_BUFFER_LEN = 256
+
+        EXEC_START = PAD_BUFFER + PAD_BUFFER_LEN
+
+        DP = auto()
+        BASE = auto()
+        STATE = auto()
+        TO_IN = auto()
+
+        END = auto()
 
     def _add_push_int_word(self, name, value):
         fn = lambda: self._data_stack.append(value)
@@ -136,13 +150,17 @@ class T4th:
             raise ValueError(f"Undefined word: `{word_name}`")
         return word
 
-    def _VAR_WORD(self, name:str) -> _Word:
+    def _VAR_WORD(self, name:str, alias:str=None) -> _Word:
         addr = T4th.MemAddress[name].value
-        return (T4th._Word(name), lambda: self._data_stack.append(addr))
+        return (T4th._Word(alias if alias else name), lambda: self._data_stack.append(addr))
 
     def _set_var_value(self, name:str, value:int):
         addr = T4th.MemAddress[name].value
         self._memory[addr] = value
+
+    def _inc_var(self, name:str, i:int=1):
+        addr = T4th.MemAddress[name].value
+        self._memory[addr] += i
 
     def _get_var_value(self, name:str) -> int:
         addr = T4th.MemAddress[name].value
@@ -160,6 +178,9 @@ class T4th:
             self._VAR_WORD('DP'),
             self._VAR_WORD('BASE'),
             self._VAR_WORD('STATE'),
+            self._VAR_WORD('TO_IN', '>IN'),
+            self._VAR_WORD('IN_BUFFER', 'TIB'),
+            self._VAR_WORD('PAD_BUFFER', 'PAD'),
 
             (T4th._Word('.S'), self._word_dot_s),
             (T4th._Word('.'), self._word_dot),
@@ -174,7 +195,6 @@ class T4th:
             (T4th._Word('EXIT', flag=NI), self._word_exit),
 
             (T4th._Word('(', flag=IM), self._word_paren),
-            (T4th._Word('\\', flag=IM), self._word_backslash),
 
             (T4th._Word('KEY'), self._word_key),
 
@@ -182,6 +202,7 @@ class T4th:
             (T4th._Word('DROP'), self._word_drop),
             (T4th._Word('SWAP'), self._word_swap),
             (T4th._Word('OVER'), self._word_over),
+            (T4th._Word('PICK'), self._word_pick),
             (T4th._Word('DEPTH'), self._word_depth),
 
             (T4th._Word('!'), self._word_mem_store),
@@ -190,6 +211,7 @@ class T4th:
 
             (T4th._Word('>R'), self._word_to_r),
             (T4th._Word('R>'), self._word_r_from),
+            (T4th._Word('R@'), self._word_r_fetch),
 
             (T4th._Word('+'), self._word_add),
             (T4th._Word('-'), self._word_sub),
@@ -224,6 +246,11 @@ class T4th:
             (T4th._Word('FORGET'), self._word_forget),
 
             (T4th._Word('CHAR'), self._word_char),
+
+            (T4th._Word('PARSE'), self._word_parse),
+            (T4th._Word('TYPE'), self._word_type),
+
+            (T4th._Word('MOVE'), self._word_move),
         ]
 
         self._init_vm()
@@ -232,12 +259,13 @@ class T4th:
         if len(self._data_stack) < depth:
             raise ValueError(f'Stack underflow: {len(self._data_stack)} < {depth}')
 
+    def _check_return_stack(self, depth):
+        if len(self._return_stack) < depth:
+            raise ValueError(f'Return stack underflow: {len(self._return_stack)} < {depth}')
+
     def _word_paren(self):
         if not self._get_until_char(')'):
             raise ValueError('Unclosed parenthesis')
-
-    def _word_backslash(self):
-        self._input_pos = len(self._input_buffer)
 
     def _word_key(self):
         key = get_raw_input(self._in_stream)
@@ -290,6 +318,13 @@ class T4th:
 
         self._data_stack.append(self._data_stack[-2])
 
+    def _word_pick(self):
+        self._check_stack(1)
+        n = self._data_stack.pop()
+        self._check_stack(n + 1)
+
+        self._data_stack.append(self._data_stack[-n-1])
+
     def _word_depth(self):
         self._data_stack.append(len(self._data_stack))
 
@@ -318,9 +353,14 @@ class T4th:
         self._return_stack.append(self._data_stack.pop())
 
     def _word_r_from(self):
-        self._check_stack(1)
+        self._check_return_stack(1)
 
         self._data_stack.append(self._return_stack.pop())
+
+    def _word_r_fetch(self):
+        self._check_return_stack(1)
+
+        self._data_stack.append(self._return_stack[-1])
 
     def _word_add(self):
         self._check_stack(2)
@@ -366,8 +406,7 @@ class T4th:
         self._set_var_value('STATE', -1)
 
     def _word_exit(self):
-        if len(self._return_stack) == 0:
-            raise ValueError('Return stack empty')
+        self._check_return_stack(1)
 
         self._pc = self._return_stack.pop()
 
@@ -489,30 +528,72 @@ class T4th:
         ch = word_name[0]
         self._data_stack.append(ord(ch))
 
+    def _word_parse(self):
+        self._check_stack(1)
+
+        c = chr(self._data_stack.pop())
+        in_begin = self._get_var_value('TO_IN')
+        if self._get_until_char(c):
+            u = self._get_var_value('TO_IN') - in_begin - 1
+        else:
+            u = 0
+
+        self._data_stack.append(T4th.MemAddress.IN_BUFFER.value + 1 + in_begin)
+        self._data_stack.append(u)
+
+    def _word_type(self):
+        self._check_stack(2)
+
+        u = self._data_stack.pop()
+        addr = self._data_stack.pop()
+
+        for i in range(u):
+            ch_ord = self._memory[addr + i]
+            print(chr(ch_ord), end='', flush=True)
+
+    def _word_move(self):
+        self._check_stack(3)
+        u = self._data_stack.pop()
+        addr2 = self._data_stack.pop()
+        addr1 = self._data_stack.pop()
+
+        for i in range(u):
+            self._memory[addr2 + i] = self._memory[addr1 + i]
+
     def _get_until_char(self, c) -> bool:
-        while self._input_pos < len(self._input_buffer):
-            if self._input_buffer[self._input_pos] == c:
-                self._input_pos += 1
+        while self._get_var_value('TO_IN') < self._memory[T4th.MemAddress.IN_BUFFER.value]:
+            ch_ord = self._memory[T4th.MemAddress.IN_BUFFER.value + 1 + self._get_var_value('TO_IN')]
+            if chr(ch_ord) == c:
+                self._inc_var('TO_IN')
                 return True
-            self._input_pos += 1
+            self._inc_var('TO_IN')
         return False
 
     def _get_next_word_or_none(self) -> Optional[str]:
-        if self._input_pos == 0:
-            self._input_buffer = get_input_line(prompt=self._prompt, stream=self._in_stream)
-            if self._input_buffer is None:
-                self._input_buffer = ''
+        if self._get_var_value('TO_IN') == 0:
+            _input_buffer = get_input_line(prompt=self._prompt, stream=self._in_stream)
+            self._set_var_value('TO_IN', 0)
+            if _input_buffer is None:
+                _input_buffer = ''
+                self._set_var_value('IN_BUFFER', 0)
                 return None
-            self._input_pos = 0
 
-        if self._input_pos >= len(self._input_buffer):
-            self._input_pos = 0
+            # 复制输入内容到memory
+            copy_len = min(T4th.MemAddress.IN_BUFFER_LEN.value - 1, len(_input_buffer))
+            for i in range(copy_len):
+                self._memory[T4th.MemAddress.IN_BUFFER.value + 1 + i] = ord(_input_buffer[i])
+            self._set_var_value('IN_BUFFER', copy_len)
+
+        if self._get_var_value('TO_IN') >= self._memory[T4th.MemAddress.IN_BUFFER.value]:
+            self._set_var_value('TO_IN', 0)
             return ''
 
         word = ''
-        while self._input_pos < len(self._input_buffer):
-            c = self._input_buffer[self._input_pos]
-            self._input_pos += 1
+        while self._get_var_value('TO_IN') < self._memory[T4th.MemAddress.IN_BUFFER.value]:
+            ch_ord = self._memory[T4th.MemAddress.IN_BUFFER.value + 1 + self._get_var_value('TO_IN')]
+            c = chr(ch_ord)
+
+            self._inc_var('TO_IN')
             if not c in [' ', '\t', '\n', '\r']:
                 word += c
             else:
@@ -560,8 +641,8 @@ class T4th:
         self._data_stack = []
         self._return_stack = []
 
-        self._input_buffer = ''
-        self._input_pos = 0
+        self._set_var_value('IN_BUFFER', 0)
+        self._set_var_value('TO_IN', 0)
 
         self._pc = 0
         self._exec_pc = 0

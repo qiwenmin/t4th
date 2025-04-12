@@ -279,6 +279,19 @@ class TestT4th(unittest.TestCase):
 
         self._run_scripts(scripts)
 
+    def test_s_quote(self):
+        "F.6.1.2165"
+        scripts = """
+            HEX                                 ==>  ok
+            : GC4 S" XY" ;                      ==>  ok
+            GC4 SWAP DROP .                     ==> 2  ok
+            GC4 DROP DUP C@ SWAP CHAR+ C@ . .   ==> 59 58  ok
+            : GC5 S" A String"2DROP ;           ==>  ok
+            GC5 .S                              ==> <0>  ok
+        """
+
+        self._run_scripts(scripts)
+
 
 if __name__ == '__main__':
     unittest.main()
