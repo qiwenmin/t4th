@@ -60,6 +60,13 @@ def get_input_line(prompt: str = '', stream=None) -> Optional[str]:
     else:
         _out = NullIO()
 
+    if isinstance(stream, StringIO) or not stream.isatty():
+        print(prompt, end='', flush=True, file=_out)
+        line = stream.readline()
+        if not line:
+            return None
+        return line.rstrip()
+
     print(prompt, end='', flush=True, file=_out)
     result = ''
     cursor_pos = 0
