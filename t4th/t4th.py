@@ -67,7 +67,7 @@ def int_to_base(n: int, base: int) -> str:
 class T4th:
     _version = '0.1.0'
 
-    MemAddress = Enum("MemAddress", "EXEC_START DP BASE END", start=0)
+    MemAddress = Enum("MemAddress", "EXEC_START DP BASE STATE END", start=0)
 
     def _add_push_int_word(self, name, value):
         fn = lambda: self._data_stack.append(value)
@@ -117,7 +117,7 @@ class T4th:
     def _find_word_ptr(self, word_name:str) -> int:
         word_name = word_name.upper()
         p = self._latest_word_ptr
-        if self._state == 'defining':
+        if self._get_var_value('STATE') != 0:
             p = self._memory[p].prev
 
         while p > 0 and self._memory[p].word_name!= word_name:
@@ -136,6 +136,18 @@ class T4th:
             raise ValueError(f"Undefined word: `{word_name}`")
         return word
 
+    def _VAR_WORD(self, name:str) -> _Word:
+        addr = T4th.MemAddress[name].value
+        return (T4th._Word(name), lambda: self._data_stack.append(addr))
+
+    def _set_var_value(self, name:str, value:int):
+        addr = T4th.MemAddress[name].value
+        self._memory[addr] = value
+
+    def _get_var_value(self, name:str) -> int:
+        addr = T4th.MemAddress[name].value
+        return self._memory[addr]
+
     def __init__(self, memory_size=65536):
         self._memory_size = memory_size
 
@@ -145,8 +157,9 @@ class T4th:
         self._primitive_words = [
             (T4th._Word('.VM'), self._print_vm),
 
-            (T4th._Word('DP'), lambda: self._data_stack.append(T4th.MemAddress.DP.value)),
-            (T4th._Word('BASE'), lambda: self._data_stack.append(T4th.MemAddress.BASE.value)),
+            self._VAR_WORD('DP'),
+            self._VAR_WORD('BASE'),
+            self._VAR_WORD('STATE'),
 
             (T4th._Word('.S'), self._word_dot_s),
             (T4th._Word('.'), self._word_dot),
@@ -182,6 +195,8 @@ class T4th:
             (T4th._Word('-'), self._word_sub),
             (T4th._Word('*'), self._word_mul),
             (T4th._Word('/'), self._word_div),
+
+            (T4th._Word('0='), self._word_zero_equ),
 
             (T4th._Word('LITERAL', flag=IM|NI), self._word_literal),
             (T4th._Word('(LITERAL)', flag=NI), self._word_literal_p),
@@ -330,6 +345,10 @@ class T4th:
 
         self._data_stack.append(b // a)
 
+    def _word_zero_equ(self):
+        self._check_stack(1)
+        self._data_stack.append(-1 if self._data_stack.pop() == 0 else 0)
+
     def _word_docol(self):
         self._return_stack.append(self._pc)
         self._pc = self._exec_pc + 1
@@ -342,7 +361,7 @@ class T4th:
         self._add_word(w)
         self._memory_append(self._memory[docol.ptr])
 
-        self._state = 'defining'
+        self._set_var_value('STATE', -1)
 
     def _word_exit(self):
         if len(self._return_stack) == 0:
@@ -352,13 +371,13 @@ class T4th:
 
     def _word_end_def(self):
         self._memory_append(self._find_word('EXIT').ptr)
-        self._state = 'running'
+        self._set_var_value('STATE', 0)
 
     def _base(self):
-        return self._memory[T4th.MemAddress.BASE.value]
+        return self._get_var_value('BASE')
 
     def _here(self):
-        return self._memory[T4th.MemAddress.DP.value]
+        return self._get_var_value('DP')
 
     def _word_create_p(self):
         self._data_stack.append(self._exec_pc + 1)
@@ -401,10 +420,10 @@ class T4th:
         self._pc += 1
 
     def _word_right_bracket(self):
-        self._state = 'defining'
+        self._set_var_value('STATE', -1)
 
     def _word_left_bracket(self):
-        self._state = 'running'
+        self._set_var_value('STATE', 0)
 
     def _word_immediate(self):
         if self._latest_word_ptr > 0:
@@ -513,7 +532,7 @@ class T4th:
         self._memory[T4th.MemAddress.BASE.value] = 10
 
         self._latest_word_ptr = 0 # 0表示无效的指针
-        self._state = 'running'
+        self._set_var_value('STATE', 0)
 
         self._rescue()
 
@@ -526,7 +545,7 @@ class T4th:
 
     def _rescue(self):
         # 在定义词的过程中恢复
-        if self._state == 'defining' and self._latest_word_ptr > 0:
+        if self._get_var_value('STATE') != 0 and self._latest_word_ptr > 0:
             # 清理掉最后一个定义的词
             self._forget_p(self._latest_word_ptr)
 
@@ -539,7 +558,7 @@ class T4th:
 
         self._pc = 0
         self._exec_pc = 0
-        self._state = 'running'
+        self._set_var_value('STATE', 0)
         self._in_stream = sys.stdin
         self._prompt = ''
 
@@ -553,7 +572,7 @@ class T4th:
         print(f' STACK: {self._data_stack}')
         print(f'     R: {self._return_stack}')
         print(f'    PC: {self._pc}')
-        print(f' STATE: {self._state}')
+        print(f' STATE: {self._get_var_value('STATE')}')
         print(f'  BASE: {self._base()}')
         print(f'LATEST: {self._latest_word_ptr}')
 
@@ -566,7 +585,7 @@ class T4th:
                 if word_name is None:
                     break # End of input
 
-                self._prompt = ' ok\n' if self._state == 'running' else ' compiled\n'
+                self._prompt = ' ok\n' if self._get_var_value('STATE') == 0 else ' compiled\n'
 
                 if word_name == '':
                     continue
@@ -588,10 +607,10 @@ class T4th:
         word = self._find_word_or_none(word_name)
 
         if word:
-            if self._state == 'defining' and not word.is_immediate():
+            if self._get_var_value('STATE') != 0 and not word.is_immediate():
                 self._memory_append(word.ptr)
             else:
-                if self._state == 'running' and word.is_non_interactive():
+                if self._get_var_value('STATE') == 0 and word.is_non_interactive():
                     raise ValueError(f'Non-interactive word "{word_name}"')
 
                 self._pc = T4th.MemAddress.EXEC_START.value
@@ -620,7 +639,7 @@ class T4th:
 
                 value = int(word_name, b) * s
 
-                if self._state == 'defining':
+                if self._get_var_value('STATE') != 0:
                     self._memory_append(self._find_word('(LITERAL)').ptr)
                     self._memory_append(value)
                 else:

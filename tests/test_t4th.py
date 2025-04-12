@@ -230,8 +230,6 @@ class TestT4th(unittest.TestCase):
     def test_if_then_else(self):
         "F.6.1.1700"
         scripts = """
-            TRUE CONSTANT <TRUE>                            ==>  ok
-            FALSE CONSTANT <FALSE>                          ==>  ok
             : GI1 IF 123 THEN ;                             ==>  ok
             : GI2 IF 123 ELSE 234 THEN ;                    ==>  ok
              0 GI1 .S                                       ==> <0>  ok
@@ -248,6 +246,16 @@ class TestT4th(unittest.TestCase):
 
         self._run_scripts(scripts)
 
+    def test_state(self):
+        "F.6.1.2250"
+        scripts = """
+            : GT8 STATE @ ; IMMEDIATE ==>  ok
+            GT8 .                     ==> 0  ok
+            : GT9 GT8 LITERAL ;       ==>  ok
+            GT9 0= <FALSE> - .        ==> 0  ok
+        """
+
+        self._run_scripts(scripts)
 
 if __name__ == '__main__':
     unittest.main()
