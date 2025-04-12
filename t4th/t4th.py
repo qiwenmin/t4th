@@ -332,8 +332,7 @@ class T4th:
 
     def _word_docol(self):
         self._return_stack.append(self._pc)
-        from_pc = self._pc - 1
-        self._pc = self._memory[from_pc] + 1
+        self._pc = self._exec_pc + 1
 
     def _word_define(self):
         word_name = self._get_next_word()
@@ -362,10 +361,7 @@ class T4th:
         return self._memory[T4th.MemAddress.DP.value]
 
     def _word_create_p(self):
-        from_pc = self._pc - 1
-        p = self._memory[from_pc] + 1
-
-        self._data_stack.append(p)
+        self._data_stack.append(self._exec_pc + 1)
 
     def _word_create(self):
         word_name = self._get_next_word()
@@ -377,9 +373,7 @@ class T4th:
 
     def _new_does_p(self, jmp_ptr):
         def does_p():
-            from_pc = self._pc - 1
-            p = self._memory[from_pc] + 1
-            self._data_stack.append(p)
+            self._data_stack.append(self._exec_pc + 1)
 
             self._return_stack.append(self._pc)
             self._pc = jmp_ptr
@@ -440,15 +434,8 @@ class T4th:
         self._check_stack(1)
 
         xt = self._data_stack.pop()
-
-        from_pc = self._pc - 1
-        p_backup = self._memory[from_pc]
-        self._memory[from_pc] = xt
-
-        try:
-            self._memory[xt]()
-        finally:
-            self._memory[from_pc] = p_backup
+        self._exec_pc = xt
+        self._memory[xt]()
 
     def _word_postpone(self):
         word_name = self._get_next_word()
@@ -551,6 +538,7 @@ class T4th:
         self._input_pos = 0
 
         self._pc = 0
+        self._exec_pc = 0
         self._state = 'running'
         self._in_stream = sys.stdin
         self._prompt = ''
@@ -610,9 +598,9 @@ class T4th:
                 self._memory[T4th.MemAddress.EXEC_START.value] = word.ptr
 
                 while self._pc != T4th.MemAddress.EXEC_START.value + 1:
-                    fn_idx = self._memory[self._pc]
+                    self._exec_pc = self._memory[self._pc]
                     self._pc += 1
-                    self._memory[fn_idx]()
+                    self._memory[self._exec_pc]()
 
         else:
             try:
