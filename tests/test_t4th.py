@@ -257,5 +257,28 @@ class TestT4th(unittest.TestCase):
 
         self._run_scripts(scripts)
 
+    def test_char(self):
+        "F.6.1.0895"
+        scripts = """
+            HEX          ==>  ok
+            CHAR X .     ==> 58  ok
+            CHAR HELLO . ==> 48  ok
+        """
+
+        self._run_scripts(scripts)
+
+    def test_bracket_char(self):
+        "F.6.1.2520"
+        scripts = """
+            HEX                     ==>  ok
+            : GC1 [CHAR] X     ;    ==>  ok
+            : GC2 [CHAR] HELLO ;    ==>  ok
+            GC1 .                   ==> 58  ok
+            GC2 .                   ==> 48  ok
+        """
+
+        self._run_scripts(scripts)
+
+
 if __name__ == '__main__':
     unittest.main()

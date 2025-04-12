@@ -222,6 +222,8 @@ class T4th:
             (T4th._Word('POSTPONE', flag=IM|NI), self._word_postpone),
 
             (T4th._Word('FORGET'), self._word_forget),
+
+            (T4th._Word('CHAR'), self._word_char),
         ]
 
         self._init_vm()
@@ -481,6 +483,11 @@ class T4th:
         while p > 0:
             print(self._memory[p].word_name, end=' ')
             p = self._memory[p].prev
+
+    def _word_char(self):
+        word_name = self._get_next_word()
+        ch = word_name[0]
+        self._data_stack.append(ord(ch))
 
     def _get_until_char(self, c) -> bool:
         while self._input_pos < len(self._input_buffer):

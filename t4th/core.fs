@@ -25,6 +25,9 @@
 -1 constant true
 0 constant false
 
+true constant <true>
+false constant <false>
+
 : >mark    ( -- addr )  here 0 , ;           \ 记下当前位置，填0做占位
 : >resolve ( addr -- )  here swap ! ;        \ 将 addr 处的0改为当前地址
 
@@ -35,5 +38,10 @@
   swap >resolve ; immediate
 
 : then ( addr -- ) >resolve ; immediate
+
+: [char]  ( -- )
+    char
+    postpone literal
+; immediate
 
 create user-word-begin
