@@ -292,6 +292,92 @@ class TestT4th(unittest.TestCase):
 
         self._run_scripts(scripts)
 
+    def test_while(self):
+        "F.6.1.2430"
+        scripts = """
+            : GI3 BEGIN DUP 5 < WHILE DUP 1+ REPEAT ;   ==>  ok
+            0 GI3 . . . . . .                           ==> 5 4 3 2 1 0  ok
+            4 GI3 . .                                   ==> 5 4  ok
+            5 GI3 .                                     ==> 5  ok
+            6 GI3 .                                     ==> 6  ok
+            : GI5 BEGIN DUP 2 > WHILE                   ==>  compiled
+             DUP 5 < WHILE DUP 1+ REPEAT                ==>  compiled
+             123 ELSE 345 THEN ;                        ==>  ok
+            1 GI5 . .                                   ==> 345 1  ok
+            2 GI5 . .                                   ==> 345 2  ok
+            3 GI5 . . . .                               ==> 123 5 4 3  ok
+            4 GI5 . . .                                 ==> 123 5 4  ok
+            5 GI5 . .                                   ==> 123 5  ok
+        """
+
+        self._run_scripts(scripts)
+
+    def test_until(self):
+        "F.6.1.2390"
+        scripts = """
+            : GI4 BEGIN DUP 1+ DUP 5 > UNTIL ;  ==>  ok
+            3 GI4 . . . .                       ==> 6 5 4 3  ok
+            5 GI4 . .                           ==> 6 5  ok
+            6 GI4 . .                           ==> 7 6  ok
+        """
+
+        self._run_scripts(scripts)
+
+    def test_bracket_then(self):
+        "F.15.6.2.2533"
+        # TODO 测试不全
+        scripts = """
+            <TRUE>  [IF] 111 [ELSE] 222 [THEN] .    ==> 111  ok
+            <FALSE> [IF] 111 [ELSE] 222 [THEN] .    ==> 222  ok
+            \\ Nested ==>  ok
+            : <T> <TRUE> ; ==>  ok
+            : <F> <FALSE> ; ==>  ok
+            <T> [IF] 1 <T> [IF] 2 [ELSE] 3 [THEN] [ELSE] 4 [THEN] . . ==> 2 1  ok
+            <F> [IF] 1 <T> [IF] 2 [ELSE] 3 [THEN] [ELSE] 4 [THEN] . ==> 4  ok
+            <T> [IF] 1 <F> [IF] 2 [ELSE] 3 [THEN] [ELSE] 4 [THEN] . . ==> 3 1  ok
+            <F> [IF] 1 <F> [IF] 2 [ELSE] 3 [THEN] [ELSE] 4 [THEN] . ==> 4  ok
+        """
+
+        self._run_scripts(scripts)
+
+    def test_to_r(self):
+        "F.6.1.0580"
+        # TODO 1S GR1没测试
+        scripts = """
+            : GR1 >R R> ; .S            ==> <0>  ok
+            : GR2 >R R@ R> DROP ; .S    ==> <0>  ok
+            123 GR1 .S drop             ==> <1> 123  ok
+            123 GR2 .S drop             ==> <1> 123  ok
+            \\ 1S GR1 ->  1S }T      ( Return stack holds cells ) ==>  ok
+        """
+
+        self._run_scripts(scripts)
+
+    def test_loop(self):
+        "F.6.1.1800"
+        # TODO 测试不全
+        scripts = """
+            : GD1 DO I LOOP ; .S ==> <0>  ok
+                     4        1 GD1 .S DROP DROP DROP ==> <3> 1 2 3  ok
+                     2       -1 GD1 .S DROP DROP DROP ==> <3> -1 0 1  ok
+            \\ MID-UINT+1 MID-UINT GD1 -> MID-UINT ==>  ok
+        """
+
+        self._run_scripts(scripts)
+
+    def test_leave(self):
+        "F.6.1.1760"
+        scripts = """
+            : GD5 123 SWAP 0 DO                 ==>  compiled
+                I 4 > IF DROP 234 LEAVE THEN    ==>  compiled
+            LOOP ; .S                           ==> <0>  ok
+            1 GD5 .                             ==> 123  ok
+            5 GD5 .                             ==> 123  ok
+            6 GD5 .                             ==> 234  ok
+        """
+
+        self._run_scripts(scripts)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,46 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-""" === TODOs ===
-- [X] 去掉dictionary字典，改用传统链表实现
-  - [X] 将word的名字放入memory
-  - [X] 添加word的向前链接指针，实现查找word的功能
-- [X] 实现测试用例
-  - [X] 测试启动和退出
-  - [X] 对基本堆栈操作做测试
-  - [X] 测试定义新词
-- [ ] 支持TEST SUITE
-  - [X] 实现注释
-    - [X] 实现'('
-    - [X] 实现'\\'
-  - [X] 实现BASE
-  - [ ] S"
-    - [ ] C"
-    - [ ] COUNT
-  - [ ] ENVIRONMENT?
-  - [X] DEPTH
-  - [X] TRUE
-  - [X] FALSE
-  - [X] IF/ELSE/THEN
-    - [X] >MARK/>RESOLVE
-    - [X] 0BRANCH
-  - [ ] [IF]
-  - [ ] [ELSE]
-  - [ ] [THEN]
-- [X] 加IMMEDIATE标志，并在vm中使用它
-- [X] 实现无限循环
-  - [X] 实现'BEGIN'和'AGAIN'
-    - [X] 实现'IMMEDIATE'
-    - [X] 实现'BRANCH'
-- [X] 实现'['和']'
-- [X] 实现POSTPONE
-- [X] 实现CONSTANT
-  - [X] 实现DOES>
-- [X] 实现VARIABLE
-  - [X] 修复CREATE的运行时行为问题
-- [X] FORGET
-"""
-
 import os
 import sys
 from typing import Optional
@@ -173,7 +133,9 @@ class T4th:
         NI = T4th._Word.FLAG_NON_INTERACTIVE
 
         self._primitive_words = [
-            (T4th._Word('.VM'), self._print_vm),
+            (T4th._Word('.VM'), self._word_dot_vm),
+
+            (T4th._Word('BYE'), self._word_bye),
 
             self._VAR_WORD('DP'),
             self._VAR_WORD('BASE'),
@@ -182,32 +144,28 @@ class T4th:
             self._VAR_WORD('IN_BUFFER', 'TIB'),
             self._VAR_WORD('PAD_BUFFER', 'PAD'),
 
+            (T4th._Word('WORDS'), self._word_words),
+            (T4th._Word('FORGET'), self._word_forget),
+
+            (T4th._Word('(', flag=IM), self._word_paren),
+
             (T4th._Word('.S'), self._word_dot_s),
             (T4th._Word('.'), self._word_dot),
             (T4th._Word('EMIT'), self._word_emit),
             (T4th._Word('CR'), self._word_cr),
 
-            (T4th._Word('WORDS'), self._word_words),
-
-            (T4th._Word('DOCOL', flag=NI), self._word_docol),
-            (T4th._Word(':'), self._word_define),
-            (T4th._Word(';', flag=IM), self._word_end_def),
-            (T4th._Word('EXIT', flag=NI), self._word_exit),
-
-            (T4th._Word('(', flag=IM), self._word_paren),
-
-            (T4th._Word('KEY'), self._word_key),
-
+            (T4th._Word('DEPTH'), self._word_depth),
             (T4th._Word('DUP'), self._word_dup),
             (T4th._Word('DROP'), self._word_drop),
             (T4th._Word('SWAP'), self._word_swap),
             (T4th._Word('OVER'), self._word_over),
             (T4th._Word('PICK'), self._word_pick),
-            (T4th._Word('DEPTH'), self._word_depth),
 
             (T4th._Word('!'), self._word_mem_store),
             (T4th._Word('@'), self._word_mem_fetch),
             (T4th._Word(','), self._word_comma),
+
+            (T4th._Word('MOVE'), self._word_move),
 
             (T4th._Word('>R'), self._word_to_r),
             (T4th._Word('R>'), self._word_r_from),
@@ -219,63 +177,91 @@ class T4th:
             (T4th._Word('/'), self._word_div),
 
             (T4th._Word('0='), self._word_zero_equ),
+            (T4th._Word('0<'), self._word_zero_less),
+
+            (T4th._Word('COMPARE'), self._word_compare),
+
+            (T4th._Word('DOCOL', flag=NI), self._word_docol),
+            (T4th._Word(':'), self._word_define),
+            (T4th._Word(';', flag=IM), self._word_end_def),
+            (T4th._Word('EXIT', flag=NI), self._word_exit),
+
+            (T4th._Word('IMMEDIATE', flag=IM), self._word_immediate),
+
+            (T4th._Word('POSTPONE', flag=IM|NI), self._word_postpone),
+
+            (T4th._Word('(CREATE)', flag=NI), self._word_create_p),
+            (T4th._Word('CREATE'), self._word_create),
+            (T4th._Word('DOES>', flag=NI), self._word_does),
 
             (T4th._Word('LITERAL', flag=IM|NI), self._word_literal),
             (T4th._Word('(LITERAL)', flag=NI), self._word_literal_p),
 
+            (T4th._Word('CHAR'), self._word_char),
+
             (T4th._Word(']'), self._word_right_bracket),
             (T4th._Word('[', flag=IM|NI), self._word_left_bracket),
-
-            (T4th._Word('IMMEDIATE', flag=IM), self._word_immediate),
-
-            (T4th._Word('BRANCH', flag=NI), self._word_branch),
-            (T4th._Word('0BRANCH', flag=NI), self._word_0branch),
-
-            (T4th._Word('BYE'), self._word_bye),
-
-            (T4th._Word('(CREATE)', flag=NI), self._word_create_p),
-            (T4th._Word('CREATE'), self._word_create),
-
-            (T4th._Word('DOES>', flag=NI), self._word_does),
 
             (T4th._Word('\''), self._word_tick),
             (T4th._Word('EXECUTE'), self._word_execute),
 
-            (T4th._Word('POSTPONE', flag=IM|NI), self._word_postpone),
+            (T4th._Word('BRANCH', flag=NI), self._word_branch),
+            (T4th._Word('0BRANCH', flag=NI), self._word_0branch),
 
-            (T4th._Word('FORGET'), self._word_forget),
+            (T4th._Word('[ELSE]', flag=IM), self._word_bracket_else),
 
-            (T4th._Word('CHAR'), self._word_char),
+            (T4th._Word('DO', flag=IM|NI), self._word_do),
+            (T4th._Word('LOOP', flag=IM|NI), self._word_loop),
+            (T4th._Word('LEAVE', flag=NI), self._word_leave),
+            (T4th._Word('I', flag=NI), self._word_i),
+            (T4th._Word('J', flag=NI), self._word_j),
+            (T4th._Word('K', flag=NI), self._word_k),
 
+            (T4th._Word('KEY'), self._word_key),
+
+            (T4th._Word('REFILL'), self._word_refill),
             (T4th._Word('PARSE'), self._word_parse),
             (T4th._Word('TYPE'), self._word_type),
-
-            (T4th._Word('MOVE'), self._word_move),
         ]
 
         self._init_vm()
 
-    def _check_stack(self, depth):
-        if len(self._data_stack) < depth:
-            raise ValueError(f'Stack underflow: {len(self._data_stack)} < {depth}')
+    # primitive words implementation
 
-    def _check_return_stack(self, depth):
-        if len(self._return_stack) < depth:
-            raise ValueError(f'Return stack underflow: {len(self._return_stack)} < {depth}')
+    def _word_dot_vm(self):
+        print()
+        print(f'Memory: {self._memory[:self._memory[T4th.MemAddress.DP.value]]}')
+
+        print(f' STACK: {self._data_stack}')
+        print(f'     R: {self._return_stack}')
+        print(f'    PC: {self._pc}')
+        print(f' STATE: {self._get_var_value('STATE')}')
+        print(f'  BASE: {self._base()}')
+        print(f'LATEST: {self._latest_word_ptr}')
+
+    def _word_bye(self):
+        print()
+        self._quit = True
+
+    def _word_words(self):
+        print()
+        p = self._latest_word_ptr
+        while p > 0:
+            print(self._memory[p].word_name, end=' ')
+            p = self._memory[p].prev
+
+    def _word_forget(self):
+        p_begin = self._find_word_ptr('USER-WORD-BEGIN')
+        word_name = self._get_next_word()
+        p = self._find_word_ptr(word_name)
+        if p > p_begin:
+            self._forget_p(p)
+        else:
+            raise ValueError(f'Cannot forget `{word_name}`')
 
     def _word_paren(self):
         if not self._get_until_char(')'):
             raise ValueError('Unclosed parenthesis')
-
-    def _word_key(self):
-        key = get_raw_input(self._in_stream)
-
-        if not key:
-            self._data_stack.append(0)
-        else:
-            if key == '\x03': # Ctrl-C
-                raise KeyboardInterrupt()
-            self._data_stack.append(ord(key))
 
     def _word_dot_s(self):
         print(f'<{len(self._data_stack)}> ', end='', flush=True)
@@ -294,6 +280,9 @@ class T4th:
 
     def _word_cr(self):
         print()
+
+    def _word_depth(self):
+        self._data_stack.append(len(self._data_stack))
 
     def _word_dup(self):
         self._check_stack(1)
@@ -325,9 +314,6 @@ class T4th:
 
         self._data_stack.append(self._data_stack[-n-1])
 
-    def _word_depth(self):
-        self._data_stack.append(len(self._data_stack))
-
     def _word_mem_store(self):
         self._check_stack(2)
 
@@ -346,6 +332,15 @@ class T4th:
         self._check_stack(1)
 
         self._memory_append(self._data_stack.pop())
+
+    def _word_move(self):
+        self._check_stack(3)
+        u = self._data_stack.pop()
+        addr2 = self._data_stack.pop()
+        addr1 = self._data_stack.pop()
+
+        for i in range(u):
+            self._memory[addr2 + i] = self._memory[addr1 + i]
 
     def _word_to_r(self):
         self._check_stack(1)
@@ -391,6 +386,33 @@ class T4th:
         self._check_stack(1)
         self._data_stack.append(-1 if self._data_stack.pop() == 0 else 0)
 
+    def _word_zero_less(self):
+        self._check_stack(1)
+        self._data_stack.append(-1 if self._data_stack.pop() < 0 else 0)
+
+    def _word_compare(self):
+        self._check_stack(4)
+
+        u2 = self._data_stack.pop()
+        addr2 = self._data_stack.pop()
+        u1 = self._data_stack.pop()
+        addr1 = self._data_stack.pop()
+
+        for i in range(min(u1, u2)):
+            if self._memory[addr1 + i] < self._memory[addr2 + i]:
+                self._data_stack.append(-1)
+                break
+            elif self._memory[addr1 + i] > self._memory[addr2 + i]:
+                self._data_stack.append(1)
+                break
+
+        if u1 < u2:
+            self._data_stack.append(-1)
+        elif u1 > u2:
+            self._data_stack.append(1)
+        else:
+            self._data_stack.append(0)
+
     def _word_docol(self):
         self._return_stack.append(self._pc)
         self._pc = self._exec_pc + 1
@@ -405,20 +427,28 @@ class T4th:
 
         self._set_var_value('STATE', -1)
 
+    def _word_end_def(self):
+        self._memory_append(self._find_word('EXIT').ptr)
+        self._set_var_value('STATE', 0)
+
     def _word_exit(self):
         self._check_return_stack(1)
 
         self._pc = self._return_stack.pop()
 
-    def _word_end_def(self):
-        self._memory_append(self._find_word('EXIT').ptr)
-        self._set_var_value('STATE', 0)
+    def _word_immediate(self):
+        if self._latest_word_ptr > 0:
+            self._memory[self._latest_word_ptr].flag |= T4th._Word.FLAG_IMMEDIATE
 
-    def _base(self):
-        return self._get_var_value('BASE')
-
-    def _here(self):
-        return self._get_var_value('DP')
+    def _word_postpone(self):
+        word_name = self._get_next_word()
+        w = self._find_word(word_name)
+        if w.is_immediate():
+            self._memory_append(w.ptr)
+        else:
+            self._memory_append(self._find_word('(LITERAL)').ptr)
+            self._memory_append(w.ptr)
+            self._memory_append(self._find_word(',').ptr)
 
     def _word_create_p(self):
         self._data_stack.append(self._exec_pc + 1)
@@ -460,30 +490,16 @@ class T4th:
         self._data_stack.append(value)
         self._pc += 1
 
+    def _word_char(self):
+        word_name = self._get_next_word()
+        ch = word_name[0]
+        self._data_stack.append(ord(ch))
+
     def _word_right_bracket(self):
         self._set_var_value('STATE', -1)
 
     def _word_left_bracket(self):
         self._set_var_value('STATE', 0)
-
-    def _word_immediate(self):
-        if self._latest_word_ptr > 0:
-            self._memory[self._latest_word_ptr].flag |= T4th._Word.FLAG_IMMEDIATE
-
-    def _word_branch(self):
-        self._pc = self._memory[self._pc]
-
-    def _word_0branch(self):
-        self._check_stack(1)
-
-        if self._data_stack.pop() == 0:
-            self._pc = self._memory[self._pc]
-        else:
-            self._pc += 1
-
-    def _word_bye(self):
-        print()
-        self._quit = True
 
     def _word_tick(self):
         word_name = self._get_next_word()
@@ -497,36 +513,140 @@ class T4th:
         self._exec_pc = xt
         self._memory[xt]()
 
-    def _word_postpone(self):
-        word_name = self._get_next_word()
-        w = self._find_word(word_name)
-        if w.is_immediate():
-            self._memory_append(w.ptr)
+    def _word_branch(self):
+        self._pc = self._memory[self._pc]
+
+    def _word_0branch(self):
+        self._check_stack(1)
+
+        if self._data_stack.pop() == 0:
+            self._pc = self._memory[self._pc]
         else:
-            self._memory_append(self._find_word('(LITERAL)').ptr)
-            self._memory_append(w.ptr)
-            self._memory_append(self._find_word(',').ptr)
+            self._pc += 1
 
-    def _word_forget(self):
-        p_begin = self._find_word_ptr('USER-WORD-BEGIN')
-        word_name = self._get_next_word()
-        p = self._find_word_ptr(word_name)
-        if p > p_begin:
-            self._forget_p(p)
+    def _word_bracket_else(self):
+        level = 1
+        while True:
+            next_word = self._get_next_word_or_none()
+            if next_word is None:
+                raise ValueError('Unclosed [ELSE]')
+
+            next_word = next_word.upper()
+            if next_word == '[IF]':
+                level += 1
+            elif next_word == '[ELSE]':
+                level -= 1
+                if level != 0:
+                    level += 1
+            elif next_word == '[THEN]':
+                level -= 1
+
+            if level == 0:
+                break
+
+    def _word_do(self):
+        """
+        编译后：
+        +----+------------+-----+
+        | DO | leave_addr | ... |
+        +----+-----+------+-----+
+                   |           ^
+                   |           |
+        +-------+  |           +-----+
+        | LEAVE |  +---------+       |
+        +-------+            |       |
+                             V       |
+        +------+-----------+-----+   |
+        | LOOP | loop_addr | ... |   |
+        +------+-----+-----+-----+   |
+                     |               |
+                     +---------------+
+
+        运行时的返回栈：
+        ( R: leave_addr limit index )
+        """
+        if self._get_var_value('STATE') != 0:
+            # 定义中
+            self._memory_append(self._find_word('DO').ptr)
+            self._data_stack.append(self._here()) # 需要loop在编译时回填的leave_addr的位置
+            self._memory_append(0) # 填0占位
         else:
-            raise ValueError(f'Cannot forget `{word_name}`')
+            # 运行时
+            index = self._data_stack.pop()
+            limit = self._data_stack.pop()
 
-    def _word_words(self):
-        print()
-        p = self._latest_word_ptr
-        while p > 0:
-            print(self._memory[p].word_name, end=' ')
-            p = self._memory[p].prev
+            self._return_stack.append(self._memory[self._pc])
+            self._return_stack.append(limit)
+            self._return_stack.append(index)
+            self._pc += 1
 
-    def _word_char(self):
-        word_name = self._get_next_word()
-        ch = word_name[0]
-        self._data_stack.append(ord(ch))
+    def _word_loop(self):
+        if self._get_var_value('STATE') != 0:
+            # 定义中
+            self._check_stack(1)
+            self._memory_append(self._find_word('LOOP').ptr)
+            leave_fill_addr = self._data_stack.pop()
+            self._memory_append(leave_fill_addr + 1)
+            self._memory[leave_fill_addr] = self._here()
+        else:
+            # 运行时
+            self._check_return_stack(3)
+            index = self._return_stack[-1]
+            limit = self._return_stack[-2]
+
+            index += 1
+            if index < limit:
+                self._return_stack[-1] = index
+                self._pc = self._memory[self._pc]
+            else:
+                self._return_stack.pop()
+                self._return_stack.pop()
+                self._return_stack.pop()
+                self._pc += 1
+
+    def _word_leave(self):
+        self._check_return_stack(3)
+        self._return_stack.pop()
+        self._return_stack.pop()
+        self._pc = self._return_stack.pop()
+
+    def _word_i(self):
+        self._check_return_stack(3)
+        self._data_stack.append(self._return_stack[-1])
+
+    def _word_j(self):
+        self._check_return_stack(6)
+        self._data_stack.append(self._return_stack[-4])
+
+    def _word_k(self):
+        self._check_return_stack(9)
+        self._data_stack.append(self._return_stack[-7])
+
+    def _word_key(self):
+        key = get_raw_input(self._in_stream)
+
+        if not key:
+            self._data_stack.append(0)
+        else:
+            if key == '\x03': # Ctrl-C
+                raise KeyboardInterrupt()
+            self._data_stack.append(ord(key))
+
+    def _word_refill(self):
+        _input_buffer = get_input_line(prompt=self._prompt, stream=self._in_stream)
+        self._set_var_value('TO_IN', 0)
+        if _input_buffer is None:
+            self._set_var_value('IN_BUFFER', 0)
+
+            self._data_stack.append(0)
+            return
+
+        copy_len = min(T4th.MemAddress.IN_BUFFER_LEN.value - 1, len(_input_buffer))
+        for i in range(copy_len):
+            self._memory[T4th.MemAddress.IN_BUFFER.value + 1 + i] = ord(_input_buffer[i])
+        self._set_var_value('IN_BUFFER', copy_len)
+
+        self._data_stack.append(-1)
 
     def _word_parse(self):
         self._check_stack(1)
@@ -551,14 +671,34 @@ class T4th:
             ch_ord = self._memory[addr + i]
             print(chr(ch_ord), end='', flush=True)
 
-    def _word_move(self):
-        self._check_stack(3)
-        u = self._data_stack.pop()
-        addr2 = self._data_stack.pop()
-        addr1 = self._data_stack.pop()
+    # 辅助函数
 
-        for i in range(u):
-            self._memory[addr2 + i] = self._memory[addr1 + i]
+    def _check_stack(self, depth):
+        if len(self._data_stack) < depth:
+            raise ValueError(f'Stack underflow: {len(self._data_stack)} < {depth}')
+
+    def _check_return_stack(self, depth):
+        if len(self._return_stack) < depth:
+            raise ValueError(f'Return stack underflow: {len(self._return_stack)} < {depth}')
+
+    def _base(self):
+        return self._get_var_value('BASE')
+
+    def _here(self):
+        return self._get_var_value('DP')
+
+    def _memory_append(self, v):
+        if self._here() >= len(self._memory):
+            raise ValueError('Memory overflow')
+        self._memory[self._here()] = v
+        self._memory[T4th.MemAddress.DP.value] += 1
+
+    def _forget_p(self, p:int):
+        w = self._memory[p]
+        self._memory[T4th.MemAddress.DP.value] = p
+        self._latest_word_ptr = w.prev
+
+    # IO函数
 
     def _get_until_char(self, c) -> bool:
         while self._get_var_value('TO_IN') < self._memory[T4th.MemAddress.IN_BUFFER.value]:
@@ -574,7 +714,6 @@ class T4th:
             _input_buffer = get_input_line(prompt=self._prompt, stream=self._in_stream)
             self._set_var_value('TO_IN', 0)
             if _input_buffer is None:
-                _input_buffer = ''
                 self._set_var_value('IN_BUFFER', 0)
                 return None
 
@@ -607,11 +746,7 @@ class T4th:
             raise ValueError('Could not get word name')
         return word
 
-    def _memory_append(self, v):
-        if self._here() >= len(self._memory):
-            raise ValueError('Memory overflow')
-        self._memory[self._here()] = v
-        self._memory[T4th.MemAddress.DP.value] += 1
+    # VM相关
 
     def _init_vm(self):
         self._quit = False
@@ -649,22 +784,6 @@ class T4th:
         self._set_var_value('STATE', 0)
         self._in_stream = sys.stdin
         self._prompt = ''
-
-    def _forget_p(self, p:int):
-        w = self._memory[p]
-        self._memory[T4th.MemAddress.DP.value] = p
-        self._latest_word_ptr = w.prev
-
-    def _print_vm(self):
-        print()
-        print(f' STACK: {self._data_stack}')
-        print(f'     R: {self._return_stack}')
-        print(f'    PC: {self._pc}')
-        print(f' STATE: {self._get_var_value('STATE')}')
-        print(f'  BASE: {self._base()}')
-        print(f'LATEST: {self._latest_word_ptr}')
-
-        print(f'Memory: {self._memory[:self._memory[T4th.MemAddress.DP.value]]}')
 
     def interpret(self):
         while not self._quit:
@@ -711,21 +830,32 @@ class T4th:
 
         else:
             try:
-                s = 1
-                if word_name[0] == '-':
-                    s = -1
-                    word_name = word_name[1:]
+                if word_name[0] == "'": # 字符
+                    if len(word_name) != 3 or word_name[2] != "'":
+                        raise ValueError(f'Invalid character "{word_name}"')
+                    value = ord(word_name[1])
+                else:
+                    s = 1
+                    if word_name[0] == '-':
+                        s = -1
+                        word_name = word_name[1:]
 
-                b = self._base()
+                    b = self._base()
 
-                if word_name[0] == '#':
-                    b = 10
-                    word_name = word_name[1:]
-                elif word_name[0] == '$':
-                    b = 16
-                    word_name = word_name[1:]
+                    if word_name[0] == '#':
+                        b = 10
+                        word_name = word_name[1:]
+                    elif word_name[0] == '$':
+                        b = 16
+                        word_name = word_name[1:]
+                    elif word_name[0] == '%':
+                        b = 2
+                        word_name = word_name[1:]
 
-                value = int(word_name, b) * s
+                    if word_name[-1] == '.':
+                        word_name = word_name[:-1]
+
+                    value = int(word_name, b) * s
 
                 if self._get_var_value('STATE') != 0:
                     self._memory_append(self._find_word('(LITERAL)').ptr)
