@@ -1,4 +1,4 @@
-.PHONY: test test-standard coverage
+.PHONY: test test-standard coverage run
 
 FS_TESTS := $(wildcard tests/test_*.fs)
 
@@ -11,3 +11,6 @@ test-standard:
 coverage:
 	python -m coverage run -m unittest discover -s tests
 	python -m coverage report
+
+run:
+	python main.py
