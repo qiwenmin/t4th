@@ -18,6 +18,6 @@ class TestStandard(unittest.TestCase):
             self.t4th.load_and_run_file(os.path.join(current_dir, 'test_core.fs'))
             output = mock_stdout.getvalue().strip()
 
-        if output:
+        if output: # pragma: no cover
             print(output)
             raise AssertionError('Test failed')

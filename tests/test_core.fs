@@ -170,6 +170,17 @@ T{ GP6 cr -> <TRUE> }T
    R> BASE ! ;
 T{ GP7 -> <TRUE> }T
 
+\ F.6.1.0070 '
+
+T{ : GT1 123 ;   ->     }T
+T{ ' GT1 EXECUTE -> 123 }T
+
+\ F.6.1.0080 (
+
+\ There is no space either side of the ).
+T{ ( A comment)1234 -> 1234 }T
+T{ : pc1 ( A comment)1234 ; pc1 -> 1234 }T
+
 
 \ Finished
 
