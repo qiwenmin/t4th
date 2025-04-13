@@ -41,6 +41,7 @@ T{ %10010110.  -> 150.        }T
 T{ %-10010110  -> -150        }T
 T{ %-10010110. -> -150.       }T
 T{ 'z'         -> 122         }T
+HEX
 
 \ F.3.5 Comparisons
 
@@ -118,6 +119,56 @@ CREATE SBUF 12 C, 34 C, 56 C,
 T{ : GDX     123 ; -> }T    \ First defintion
 T{ : GDX GDX 234 ; -> }T    \ Second defintion
 T{ GDX -> 123 234 }T
+
+
+\ F.6 The Core word set
+
+\ F.6.1.0010 !
+
+\ F.6.1.0030 #
+
+: GP3 <# 1 0 # # #> S" 01" S= ;
+T{ GP3 -> <TRUE> }T
+
+\ F.6.1.0040 #>
+
+\ F.6.1.0050 #S
+
+: GP4 <# 1 0 #S #> S" 1" S= ;
+T{ GP4 -> <TRUE> }T
+: GP5
+   BASE @ <TRUE>
+   MAX-BASE 1+ 2 DO      \ FOR EACH POSSIBLE BASE
+     I BASE !              \ TBD: ASSUMES BASE WORKS
+       I 0 <# #S #> S" 10" S= AND
+   LOOP
+   SWAP BASE ! ;
+T{ GP5 -> <TRUE> }T
+
+: GP6
+   BASE @ >R 2 BASE !
+   MAX-UINT MAX-UINT <# #S #>    \ MAXIMUM UD TO BINARY
+   R> BASE !                        \ S: C-ADDR U
+   DUP #BITS-UD = SWAP
+   0 DO                              \ S: C-ADDR FLAG
+     OVER C@ [CHAR] 1 = AND     \ ALL ONES
+     >R CHAR+ R>
+   LOOP SWAP DROP ;
+T{ GP6 cr -> <TRUE> }T
+
+: GP7
+   BASE @ >R MAX-BASE BASE !
+   <TRUE>
+   A 0 DO
+     I 0 <# #S #>
+     1 = SWAP C@ I 30 + = AND AND
+   LOOP
+   MAX-BASE A DO
+     I 0 <# #S #>
+     1 = SWAP C@ 41 I A - + = AND AND
+   LOOP
+   R> BASE ! ;
+T{ GP7 -> <TRUE> }T
 
 
 \ Finished

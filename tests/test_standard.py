@@ -1,5 +1,7 @@
 import os
 import unittest
+from unittest.mock import patch
+from io import StringIO
 from t4th import t4th
 
 class TestStandard(unittest.TestCase):
@@ -11,5 +13,11 @@ class TestStandard(unittest.TestCase):
         self.t4th.load_and_run_file(os.path.join(current_dir, 'ttester.fs'))
 
     def test_core(self):
-        current_dir = os.path.dirname(__file__)
-        self.t4th.load_and_run_file(os.path.join(current_dir, 'test_core.fs'))
+        with patch('sys.stdout', new=StringIO()) as mock_stdout:
+            current_dir = os.path.dirname(__file__)
+            self.t4th.load_and_run_file(os.path.join(current_dir, 'test_core.fs'))
+            output = mock_stdout.getvalue().strip()
+
+        if output:
+            print(output)
+            raise AssertionError('Test failed')

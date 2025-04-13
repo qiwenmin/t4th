@@ -3,27 +3,11 @@
 
 import os
 import sys
+import t4th.t4th_num as tn
 from ctypes import c_int
 from typing import Optional
 from enum import Enum, auto
 from .input import get_raw_input, get_input_line
-
-
-def int_to_base(n: int, base: int) -> str:
-    if not (2 <= base <= 36):
-        raise ValueError("Base must be between 2 and 36")
-    if n == 0:
-        return '0'
-
-    digits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    is_negative = n < 0
-    n = abs(n)
-    res = ""
-    while n:
-        res = digits[n % base] + res
-        n //= base
-    return '-' + res if is_negative else res
-
 
 class T4th:
     _version = '0.1.0'
@@ -128,6 +112,8 @@ class T4th:
         return self._memory[addr]
 
     def __init__(self, memory_size=65536):
+        tn.base = lambda : self._base()
+
         self._memory_size = memory_size
 
         IM = T4th._Word.FLAG_IMMEDIATE
@@ -178,7 +164,10 @@ class T4th:
             (T4th._Word('/'), self._word_div),
 
             (T4th._Word('INVERT'), self._word_invert),
+            (T4th._Word('AND'), self._word_and),
             (T4th._Word('RSHIFT'), self._word_rshift),
+
+            (T4th._Word('UM/MOD'), self._word_um_mod),
 
             (T4th._Word('0='), self._word_zero_equ),
             (T4th._Word('0<'), self._word_zero_less),
@@ -271,12 +260,12 @@ class T4th:
     def _word_dot_s(self):
         print(f'<{len(self._data_stack)}> ', end='', flush=True)
         for v in self._data_stack:
-            print(f'{int_to_base(v, self._base())}', end=' ', flush=True)
+            print(f'{tn.int_to_base(v)}', end=' ', flush=True)
 
     def _word_dot(self):
         self._check_stack(1)
 
-        print(f'{int_to_base(self._data_stack.pop(), self._base())} ', end='', flush=True)
+        print(f'{tn.int_to_base(self._data_stack.pop())} ', end='', flush=True)
 
     def _word_emit(self):
         self._check_stack(1)
@@ -365,17 +354,17 @@ class T4th:
     def _word_add(self):
         self._check_stack(2)
 
-        self._data_stack.append(self._data_stack.pop() + self._data_stack.pop())
+        self._data_stack.append(tn.I(self._data_stack.pop()) + tn.I(self._data_stack.pop()))
 
     def _word_sub(self):
         self._check_stack(2)
 
-        self._data_stack.append(- (self._data_stack.pop() - self._data_stack.pop()))
+        self._data_stack.append(tn.I(-self._data_stack.pop()) - tn.I(-self._data_stack.pop()))
 
     def _word_mul(self):
         self._check_stack(2)
 
-        self._data_stack.append(self._data_stack.pop() * self._data_stack.pop())
+        self._data_stack.append(tn.I(self._data_stack.pop()) * tn.I(self._data_stack.pop()))
 
     def _word_div(self):
         self._check_stack(2)
@@ -389,12 +378,30 @@ class T4th:
 
     def _word_invert(self):
         self._check_stack(1)
-        self._data_stack.append(~ self._data_stack.pop())
+        self._data_stack.append(tn.I(self._data_stack.pop()).invert())
+
+    def _word_and(self):
+        self._check_stack(2)
+        self._data_stack.append(self._data_stack.pop() & self._data_stack.pop())
 
     def _word_rshift(self):
         self._check_stack(2)
         shift = self._data_stack.pop()
-        self._data_stack.append(self._data_stack.pop() << shift)
+        self._data_stack.append(tn.I(self._data_stack.pop()).rshift(shift))
+
+    def _word_um_mod(self):
+        self._check_stack(3)
+        u1 = self._data_stack.pop()
+        ud2 = self._data_stack.pop()
+        ud1 = self._data_stack.pop()
+
+        if u1 == 0:
+            raise ValueError('Division by zero')
+
+        (r, q) = tn.I(u1).um_mod(ud1, ud2)
+
+        self._data_stack.append(r)
+        self._data_stack.append(q)
 
     def _word_zero_equ(self):
         self._check_stack(1)
@@ -770,46 +777,10 @@ class T4th:
         self._quit = False
         self._quit_on_error = False
 
-        class _int(c_int):
-            _vm = self
-            def __repr__(self):
-                return f'{int_to_base(self.value, _int._vm._base())}'
+        self._data_stack = tn.memory()
+        self._return_stack = tn.memory()
 
-        def _v_in(v):
-            if isinstance(v, _int):
-                return v
-            elif isinstance(v, int):
-                return _int(v)
-            else:
-                return v
-
-        def _v_out(v):
-            if isinstance(v, _int):
-                return v.value
-            else:
-                return v
-
-        class memory(list):
-            def __init__(self, size=0):
-                if size != 0:
-                    super().__init__([_int(0)] * size)
-                else:
-                    super().__init__()
-            def append(self, v):
-                super().append(_v_in(v))
-            def __setitem__(self, i, v):
-                super().__setitem__(i, _v_in(v))
-            def __getitem__(self, i):
-                return _v_out(super().__getitem__(i))
-            def __iter__(self):
-                return (_v_out(x) for x in super().__iter__())
-            def pop(self):
-                return _v_out(super().pop())
-
-        self._data_stack = memory()
-        self._return_stack = memory()
-
-        self._memory = memory(self._memory_size)
+        self._memory = tn.memory(self._memory_size)
         self._memory[T4th.MemAddress.DP.value] = T4th.MemAddress.END.value
         self._memory[T4th.MemAddress.BASE.value] = 10
 
@@ -898,26 +869,28 @@ class T4th:
                     value = ord(word_name[1])
                 else:
                     s = 1
-                    if word_name[0] == '-':
+                    w = word_name
+                    if w[0] == '-':
                         s = -1
-                        word_name = word_name[1:]
+                        w = w[1:]
 
                     b = self._base()
 
-                    if word_name[0] == '#':
+                    if w[0] == '#':
                         b = 10
-                        word_name = word_name[1:]
-                    elif word_name[0] == '$':
+                        w = w[1:]
+                    elif w[0] == '$':
                         b = 16
-                        word_name = word_name[1:]
-                    elif word_name[0] == '%':
+                        w = w[1:]
+                    elif w[0] == '%':
                         b = 2
-                        word_name = word_name[1:]
+                        w = w[1:]
 
-                    if word_name[-1] == '.':
-                        word_name = word_name[:-1]
+                    if len(w) > 0:
+                        if w[-1] == '.':
+                            w = w[:-1]
 
-                    value = int(word_name, b) * s
+                    value = int(w, b) * s
 
                 if self._get_var_value('STATE') != 0:
                     self._memory_append(self._find_word('(LITERAL)').ptr)

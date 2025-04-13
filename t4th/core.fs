@@ -186,5 +186,34 @@ $20 constant bl
   SWAP    \ ( x1 x2 ) ( R: x0 )
 ;
 
+\ pictured numeric output
+
+variable hld
+
+: <# pad hld ! ;
+
+: UD/MOD  ( ud u -- rem quot )
+    >R 0 R@ UM/MOD ROT ROT R> UM/MOD ROT
+;
+
+: HOLD  ( char -- )
+    hld @ C!  \ 存储字符到当前hld位置
+    -1 hld +! \ hld指针前移（反向填充）
+;
+
+: #  ( ud1 -- ud2 )
+    BASE @ UD/MOD ROT \ 除以基数得到余数（数字）和商
+    9 OVER < IF 7 + THEN \ 处理A-F字母数字
+    [CHAR] 0 + HOLD \ 转换为ASCII并存入
+;
+
+: #S  ( ud -- 0 0 )
+    BEGIN # 2DUP OR 0= UNTIL \ 循环直到所有数字转换完毕
+;
+
+: #>  ( ud -- addr u )
+  2drop pad hld @ - hld @ 1+ swap
+;
+
 \ 这个词之后的，才能forget。
 create user-word-begin
