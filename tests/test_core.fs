@@ -99,11 +99,9 @@ T{ 'z'         -> 122         }T
 
 24 CONSTANT MAX-BASE                  \ BASE 2 ... 36
 
-\ 因为Python的整数是无限精度，所以标准中得到UD的位数的方法不适用。我们自己确定一个合适的位数，用于后面的测试用例。
-\ : COUNT-BITS
-\    0 0 INVERT BEGIN DUP WHILE >R 1+ R> 2* REPEAT DROP ;
-\ COUNT-BITS 2* CONSTANT #BITS-UD    \ NUMBER OF BITS IN UD
-64 CONSTANT #BITS-UD
+: COUNT-BITS
+   0 0 INVERT BEGIN DUP WHILE >R 1+ R> 2* REPEAT DROP ;
+COUNT-BITS 2* CONSTANT #BITS-UD    \ NUMBER OF BITS IN UD
 
 \ F.3.20 Memory Movement
 

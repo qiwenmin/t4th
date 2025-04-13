@@ -3,6 +3,7 @@
 
 import os
 import sys
+from ctypes import c_int
 from typing import Optional
 from enum import Enum, auto
 from .input import get_raw_input, get_input_line
@@ -769,7 +770,46 @@ class T4th:
         self._quit = False
         self._quit_on_error = False
 
-        self._memory = [0] * self._memory_size
+        class _int(c_int):
+            _vm = self
+            def __repr__(self):
+                return f'{int_to_base(self.value, _int._vm._base())}'
+
+        def _v_in(v):
+            if isinstance(v, _int):
+                return v
+            elif isinstance(v, int):
+                return _int(v)
+            else:
+                return v
+
+        def _v_out(v):
+            if isinstance(v, _int):
+                return v.value
+            else:
+                return v
+
+        class memory(list):
+            def __init__(self, size=0):
+                if size != 0:
+                    super().__init__([_int(0)] * size)
+                else:
+                    super().__init__()
+            def append(self, v):
+                super().append(_v_in(v))
+            def __setitem__(self, i, v):
+                super().__setitem__(i, _v_in(v))
+            def __getitem__(self, i):
+                return _v_out(super().__getitem__(i))
+            def __iter__(self):
+                return (_v_out(x) for x in super().__iter__())
+            def pop(self):
+                return _v_out(super().pop())
+
+        self._data_stack = memory()
+        self._return_stack = memory()
+
+        self._memory = memory(self._memory_size)
         self._memory[T4th.MemAddress.DP.value] = T4th.MemAddress.END.value
         self._memory[T4th.MemAddress.BASE.value] = 10
 
@@ -792,8 +832,8 @@ class T4th:
             self._forget_p(self._latest_word_ptr)
 
 
-        self._data_stack = []
-        self._return_stack = []
+        self._data_stack.clear()
+        self._return_stack.clear()
 
         self._set_var_value('IN_BUFFER', 0)
         self._set_var_value('TO_IN', 0)
