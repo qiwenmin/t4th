@@ -767,6 +767,8 @@ class T4th:
 
     def _init_vm(self):
         self._quit = False
+        self._quit_on_error = False
+
         self._memory = [0] * self._memory_size
         self._memory[T4th.MemAddress.DP.value] = T4th.MemAddress.END.value
         self._memory[T4th.MemAddress.BASE.value] = 10
@@ -821,6 +823,9 @@ class T4th:
                 print(f'Error: {e}')
                 self._rescue()
                 self._prompt = ''
+                if self._quit_on_error:
+                    raise e
+
             except KeyboardInterrupt:
                 print()
                 print('Use interrupt')
@@ -882,7 +887,8 @@ class T4th:
             except ValueError:
                 raise ValueError(f'Unknown word "{word_name}"')
 
-    def load_and_run_file(self, filename):
+    def load_and_run_file(self, filename) -> bool:
+        self._quit_on_error = True
         try:
             with open(filename, 'r') as file:
                 self._in_stream = file
@@ -892,13 +898,19 @@ class T4th:
         except FileNotFoundError:
             print(f'Error: file "{filename}" not found')
             exit(1)
+        finally:
+            self._quit_on_error = False
+
+    def _load_core_fs(self):
+        # 从本模块同级目录下加载并执行 core.fs 文件的内容
+        current_dir = os.path.dirname(__file__)
+        self.load_and_run_file(os.path.join(current_dir, 'core.fs'))
+
 
 def main():
     t4th = T4th()
 
-    # 从本模块同级目录下加载并执行 core.fs 文件的内容
-    current_dir = os.path.dirname(__file__)
-    t4th.load_and_run_file(os.path.join(current_dir, 'core.fs'))
+    t4th._load_core_fs()
 
     print(f'T4th version {t4th._version} [ Free memory {len(t4th._memory) - t4th._here()} ]')
     t4th.interpret()  # 进入命令交互

@@ -1,0 +1,4 @@
+[run]
+omit =
+    main.py
+    t4th/input.py
