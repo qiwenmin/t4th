@@ -176,6 +176,9 @@ class T4th:
             (T4th._Word('*'), self._word_mul),
             (T4th._Word('/'), self._word_div),
 
+            (T4th._Word('INVERT'), self._word_invert),
+            (T4th._Word('RSHIFT'), self._word_rshift),
+
             (T4th._Word('0='), self._word_zero_equ),
             (T4th._Word('0<'), self._word_zero_less),
 
@@ -213,6 +216,7 @@ class T4th:
             (T4th._Word('DO', flag=IM|NI), self._word_do),
             (T4th._Word('LOOP', flag=IM|NI), self._word_loop),
             (T4th._Word('LEAVE', flag=NI), self._word_leave),
+            (T4th._Word('UNLOOP', flag=NI), self._word_unloop),
             (T4th._Word('I', flag=NI), self._word_i),
             (T4th._Word('J', flag=NI), self._word_j),
             (T4th._Word('K', flag=NI), self._word_k),
@@ -381,6 +385,15 @@ class T4th:
             raise ValueError('Division by zero')
 
         self._data_stack.append(b // a)
+
+    def _word_invert(self):
+        self._check_stack(1)
+        self._data_stack.append(~ self._data_stack.pop())
+
+    def _word_rshift(self):
+        self._check_stack(2)
+        shift = self._data_stack.pop()
+        self._data_stack.append(self._data_stack.pop() << shift)
 
     def _word_zero_equ(self):
         self._check_stack(1)
@@ -605,6 +618,10 @@ class T4th:
                 self._pc += 1
 
     def _word_leave(self):
+        self._check_return_stack(3)
+        self._return_stack[-1] = self._return_stack[-2]
+
+    def _word_unloop(self):
         self._check_return_stack(3)
         self._return_stack.pop()
         self._return_stack.pop()

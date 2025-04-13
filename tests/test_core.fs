@@ -2,6 +2,9 @@
 
 \ F.3 Core Tests
 
+BASE @
+
+HEX
 
 \ F.3.1 Basic Assumptions
 
@@ -12,6 +15,15 @@ T{  0 BITSSET? -> 0 }T        ( Zero is all bits clear )
 T{  1 BITSSET? -> 0 0 }T      ( Other numbers have at least one bit )
 T{ -1 BITSSET? -> 0 0 }T
 
+\ F.3.2 Booleans
+
+0 constant 0S
+0S invert constant 1S
+
+\ F.3.3 Shifts
+
+1S 1 RSHIFT INVERT CONSTANT MSB
+T{ MSB BITSSET? -> 0 0 }T
 
 \ F.3.4 Numeric notation
 
@@ -29,3 +41,62 @@ T{ %10010110.  -> 150.        }T
 T{ %-10010110  -> -150        }T
 T{ %-10010110. -> -150.       }T
 T{ 'z'         -> 122         }T
+
+\ F.3.5 Comparisons
+
+0 INVERT CONSTANT MAX-UINT
+0 INVERT 1 RSHIFT CONSTANT MAX-INT
+0 INVERT 1 RSHIFT INVERT CONSTANT MIN-INT
+0 INVERT 1 RSHIFT CONSTANT MID-UINT
+0 INVERT 1 RSHIFT INVERT CONSTANT MID-UINT+1
+
+0S CONSTANT <FALSE>
+1S CONSTANT <TRUE>
+
+\ F.3.6 Stack Operators
+
+\ F.3.7 Return Stack Operators
+
+\ F.3.8 Addition and Subtraction
+
+\ F.3.9 Multiplication
+
+\ F.3.10 Division
+
+: IFFLOORED [ -3 2 / -2 = INVERT ] LITERAL IF POSTPONE \ THEN ;
+: IFSYM      [ -3 2 / -1 = INVERT ] LITERAL IF POSTPONE \ THEN ;
+
+\ F.3.11 Memory
+
+\ F.3.12 Characters
+
+\ F.3.13 Dictionary
+
+\ F.3.14 Flow Control
+
+\ F.3.15 Counted Loops
+
+\ F.3.15 Counted Loops
+
+\ F.3.17 Evaluate
+
+\ F.3.18 Parser Input Source Control
+
+\ F.3.19 Number Patterns
+
+: S= \ ( ADDR1 C1 ADDR2 C2 -- T/F ) Compare two strings.
+   >R SWAP R@ = IF            \ Make sure strings have same length
+     R> ?DUP IF               \ If non-empty strings
+       0 DO
+         OVER C@ OVER C@ - IF 2DROP <FALSE> UNLOOP EXIT THEN
+         SWAP CHAR+ SWAP CHAR+
+       LOOP
+     THEN
+     2DROP <TRUE>            \ If we get here, strings match
+   ELSE
+     R> DROP 2DROP <FALSE> \ Lengths mismatch
+   THEN ;
+
+\ Finished
+
+BASE !
