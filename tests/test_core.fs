@@ -97,6 +97,31 @@ T{ 'z'         -> 122         }T
      R> DROP 2DROP <FALSE> \ Lengths mismatch
    THEN ;
 
+24 CONSTANT MAX-BASE                  \ BASE 2 ... 36
+
+\ 因为Python的整数是无限精度，所以标准中得到UD的位数的方法不适用。我们自己确定一个合适的位数，用于后面的测试用例。
+\ : COUNT-BITS
+\    0 0 INVERT BEGIN DUP WHILE >R 1+ R> 2* REPEAT DROP ;
+\ COUNT-BITS 2* CONSTANT #BITS-UD    \ NUMBER OF BITS IN UD
+64 CONSTANT #BITS-UD
+
+\ F.3.20 Memory Movement
+
+CREATE FBUF 00 C, 00 C, 00 C,
+CREATE SBUF 12 C, 34 C, 56 C,
+: SEEBUF FBUF C@ FBUF CHAR+ C@ FBUF CHAR+ CHAR+ C@ ;
+
+\ F.3.21 Output
+
+\ F.3.22 Input
+
+\ F.3.23 Dictionary Search Rules
+
+T{ : GDX     123 ; -> }T    \ First defintion
+T{ : GDX GDX 234 ; -> }T    \ Second defintion
+T{ GDX -> 123 234 }T
+
+
 \ Finished
 
 BASE !
