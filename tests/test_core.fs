@@ -260,6 +260,43 @@ T{ MID-UINT+1  1 - -> MID-UINT }T
 
 T{ : pb1 CR ." You should see 2345: "." 2345"; pb1 -> }T
 
+\ TODO: F.6.1.0230 /
+
+\ TODO: F.6.1.0240 /MOD
+
+\ F.6.1.02500 <
+
+T{       0 0< -> <FALSE> }T
+T{      -1 0< -> <TRUE>  }T
+T{ MIN-INT 0< -> <TRUE>  }T
+T{       1 0< -> <FALSE> }T
+T{ MAX-INT 0< -> <FALSE> }T
+
+\ F.6.1.0270 0=
+
+T{        0 0= -> <TRUE>  }T
+T{        1 0= -> <FALSE> }T
+T{        2 0= -> <FALSE> }T
+T{       -1 0= -> <FALSE> }T
+T{ MAX-UINT 0= -> <FALSE> }T
+T{ MIN-INT  0= -> <FALSE> }T
+T{ MAX-INT  0= -> <FALSE> }T
+
+\ F.6.1.0290 1+
+
+T{        0 1+ ->          1 }T
+T{       -1 1+ ->          0 }T
+T{        1 1+ ->          2 }T
+T{ MID-UINT 1+ -> MID-UINT+1 }T
+
+\ F.6.1.0300 1-
+
+T{          2 1- ->        1 }T
+T{          1 1- ->        0 }T
+T{          0 1- ->       -1 }T
+T{ MID-UINT+1 1- -> MID-UINT }T
+
+
 \ Finished
 
 BASE !
