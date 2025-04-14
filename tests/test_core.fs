@@ -254,6 +254,11 @@ T{         -1 -2 - ->        1 }T
 T{          0  1 - ->       -1 }T
 T{ MID-UINT+1  1 - -> MID-UINT }T
 
+\ F.6.1.0180 .
+
+\ F.6.1.0190 ."
+
+T{ : pb1 CR ." You should see 2345: "." 2345"; pb1 -> }T
 
 \ Finished
 

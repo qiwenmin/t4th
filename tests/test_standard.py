@@ -2,6 +2,7 @@ import os
 import unittest
 from unittest.mock import patch
 from io import StringIO
+import textwrap
 from t4th import t4th
 
 class TestStandard(unittest.TestCase):
@@ -18,6 +19,8 @@ class TestStandard(unittest.TestCase):
             self.t4th.load_and_run_file(os.path.join(current_dir, 'test_core.fs'))
             output = mock_stdout.getvalue().strip()
 
-        if output: # pragma: no cover
-            print(output)
-            raise AssertionError('Test failed')
+        expected_output = textwrap.dedent("""\
+            You should see 2345: 2345
+        """).strip()
+
+        self.assertEqual(output, expected_output)
