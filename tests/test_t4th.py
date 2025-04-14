@@ -39,6 +39,18 @@ class TestT4th(unittest.TestCase):
 
             self.assertEqual(output_lines, expected)
 
+    def _run_scripts_result_contains(self, scripts, result_regex):
+        with patch('sys.stdin', new=StringIO(scripts)), \
+             patch('sys.stdout', new=StringIO()) as mock_stdout:
+            t4th.main()
+            output = mock_stdout.getvalue()
+            output_lines = output.split('\n')
+            welcome_line = output_lines[0]
+            self._assert_welcome_message(welcome_line)
+            output_lines = '\n'.join([s.rstrip() for s in output_lines[1:]]).rstrip()
+            self.assertRegex(output_lines, result_regex)
+
+
     def test_boot_and_bye(self):
         scripts = """
             bye ==>
@@ -115,6 +127,46 @@ class TestT4th(unittest.TestCase):
             123\t456\t.S ==> <2> 123 456  ok
         """
         self._run_scripts(scripts)
+
+    def test_dot_vm(self):
+        scripts = ".vm"
+        output_contains = r'LATEST: \d+'
+        self._run_scripts_result_contains(scripts, output_contains)
+
+    def test_words(self):
+        scripts = "create foo\nwords\n"
+        output_contains = r'FOO USER-WORD-BEGIN'
+        self._run_scripts_result_contains(scripts, output_contains)
+
+    def test_unclosed_paran(self):
+        scripts = "( not closed"
+        output_contains = r'Error: Unclosed parenthesis'
+        self._run_scripts_result_contains(scripts, output_contains)
+
+    def test_undefined_word(self):
+        scripts = "word-not-defined"
+        output_contains = r'Error: Unknown word "word-not-defined"'
+        self._run_scripts_result_contains(scripts, output_contains)
+
+    def test_division_by_zero(self):
+        scripts = "1 0 / ."
+        output_contains = r'Error: Division by zero'
+        self._run_scripts_result_contains(scripts, output_contains)
+
+        scripts = "1 1 0 um/mod ."
+        output_contains = r'Error: Division by zero'
+        self._run_scripts_result_contains(scripts, output_contains)
+
+    def test_compare(self):
+        scripts = """
+            S" string1" s>here S" string1" compare .  ==> 0  ok
+            S" string1" s>here S" string2" compare .  ==> -1  ok
+            S" string2" s>here S" string1" compare .  ==> 1  ok
+            S" 123" s>here S" 1234" compare .         ==> -1  ok
+            S" 123" s>here S" 12" compare .           ==> 1  ok
+        """
+        self._run_scripts(scripts)
+
 
     def test_postpone(self):
         "F.6.1.2033"
@@ -377,7 +429,3 @@ class TestT4th(unittest.TestCase):
         """
 
         self._run_scripts(scripts)
-
-
-if __name__ == '__main__':
-    unittest.main()

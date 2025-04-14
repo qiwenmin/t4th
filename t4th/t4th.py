@@ -28,10 +28,6 @@ class T4th:
 
         END = auto()
 
-    def _add_push_int_word(self, name, value):
-        fn = lambda: self._data_stack.append(value)
-        self._add_word(T4th._Word(name, fn))
-
     class _Word:
         FLAG_IMMEDIATE = 1 << 0
         FLAG_NON_INTERACTIVE = 1 << 1
@@ -372,7 +368,7 @@ class T4th:
 
         a = self._data_stack.pop()
         b = self._data_stack.pop()
-        if b == 0:
+        if a == 0:
             raise ValueError('Division by zero')
 
         self._data_stack.append(b // a)
@@ -427,10 +423,10 @@ class T4th:
         for i in range(min(u1, u2)):
             if self._memory[addr1 + i] < self._memory[addr2 + i]:
                 self._data_stack.append(-1)
-                break
+                return
             elif self._memory[addr1 + i] > self._memory[addr2 + i]:
                 self._data_stack.append(1)
-                break
+                return
 
         if u1 < u2:
             self._data_stack.append(-1)

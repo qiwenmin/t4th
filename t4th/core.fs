@@ -6,6 +6,7 @@
 : decimal #10 base ! ;
 
 : rot >r swap r> swap ;
+: -rot rot rot ;
 : nip swap drop ;
 : tuck swap over ;
 
@@ -209,6 +210,11 @@ variable hld
 
 : #>  ( ud -- addr u )
   2drop pad hld @ - hld @ 1+ swap
+;
+
+\ 将字符串复制到here开始的地方，返回新的地址和长度
+: s>here ( addr u - addr u )
+  here -rot dup -rot dup here swap allot swap move
 ;
 
 \ 这个词之后的，才能forget。
