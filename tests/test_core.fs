@@ -182,6 +182,7 @@ T{ ( A comment)1234 -> 1234 }T
 T{ : pc1 ( A comment)1234 ; pc1 -> 1234 }T
 
 \ F.6.1.0090 *
+
 T{  0  0 * ->  0 }T          \ TEST IDENTITIE\S
 T{  0  1 * ->  0 }T
 T{  1  0 * ->  0 }T
@@ -200,6 +201,7 @@ T{ MID-UINT+1 1 RSHIFT MID-UINT+1 OR 2 * -> MID-UINT+1 }T
 \ TODO: F.6.1.0100 */
 
 \ F.6.1.0120 +
+
 T{        0  5 + ->          5 }T
 T{        5  0 + ->          5 }T
 T{        0 -5 + ->         -5 }T
@@ -210,6 +212,32 @@ T{       -1  2 + ->          1 }T
 T{       -1 -2 + ->         -3 }T
 T{       -1  1 + ->          0 }T
 T{ MID-UINT  1 + -> MID-UINT+1 }T
+
+\ F.6.1.0150 ,
+
+HERE 1 ,
+HERE 2 ,
+CONSTANT 2ND
+CONSTANT 1ST
+T{       1ST 2ND U< -> <TRUE> }T \ HERE MUST GROW WITH ALLOT
+T{       1ST CELL+  -> 2ND }T \ ... BY ONE CELL
+T{   1ST 1 CELLS +  -> 2ND }T
+T{     1ST @ 2ND @  -> 1 2 }T
+T{         5 1ST !  ->     }T
+T{     1ST @ 2ND @  -> 5 2 }T
+T{         6 2ND !  ->     }T
+T{     1ST @ 2ND @  -> 5 6 }T
+T{           1ST 2@ -> 6 5 }T
+T{       2 1 1ST 2! ->     }T
+T{           1ST 2@ -> 2 1 }T
+T{ 1S 1ST !  1ST @  -> 1S  }T    \ CAN STORE CELL-WIDE VALUE
+
+\ F.6.1.0130 +!
+
+T{  0 1ST !        ->   }T
+T{  1 1ST +!       ->   }T
+T{    1ST @        -> 1 }T
+T{ -1 1ST +! 1ST @ -> 0 }T
 
 
 \ Finished

@@ -59,6 +59,10 @@
 : c! ! ;
 
 : char+ 1+ ;
+: cell+ 1 cells + ;
+
+: 2@ DUP CELL+ @ SWAP @ ;
+: 2! SWAP OVER ! CELL+ ! ;
 
 : variable create 0 , ;
 : constant create , does> @ ;
