@@ -903,7 +903,7 @@ class T4th:
     def load_and_run_file(self, filename) -> bool:
         self._quit_on_error = True
         try:
-            with open(filename, 'r') as file:
+            with open(filename, 'r', encoding='utf-8') as file:
                 self._in_stream = file
                 self.interpret()
             self._in_stream = sys.stdin
