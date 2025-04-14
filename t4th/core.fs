@@ -46,10 +46,6 @@
 : U< < ;
 : U> > ;
 
-: or ( a b -- a|b )
-  dup 0= if drop else nip then
-;
-
 : +! swap over @ + swap ! ;
 : allot dp +! ;
 

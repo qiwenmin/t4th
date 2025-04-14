@@ -40,7 +40,7 @@ class I(c_int):
         return I(~self.value & int_mask)
 
     def rshift(self, n):
-        return I(self.value & int_mask >> n)
+        return I((self.value & int_mask) >> n)
 
     def um_mod(self, ud1, ud2):
         u1 = uint_type(self.value).value & int_mask
@@ -85,4 +85,3 @@ class memory(list):
         return (_v_out(x) for x in super().__iter__())
     def pop(self):
         return _v_out(super().pop())
-

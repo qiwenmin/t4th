@@ -165,6 +165,7 @@ class T4th:
 
             (T4th._Word('INVERT'), self._word_invert),
             (T4th._Word('AND'), self._word_and),
+            (T4th._Word('OR'), self._word_or),
             (T4th._Word('RSHIFT'), self._word_rshift),
 
             (T4th._Word('UM/MOD'), self._word_um_mod),
@@ -383,6 +384,10 @@ class T4th:
     def _word_and(self):
         self._check_stack(2)
         self._data_stack.append(self._data_stack.pop() & self._data_stack.pop())
+
+    def _word_or(self):
+        self._check_stack(2)
+        self._data_stack.append(self._data_stack.pop() | self._data_stack.pop())
 
     def _word_rshift(self):
         self._check_stack(2)
