@@ -396,8 +396,21 @@ T{ MAX-INT MIN-INT > -> <TRUE>  }T
 T{ MAX-INT       0 > -> <TRUE>  }T
 
 \ F.6.1.0550 >BODY
+
 T{  CREATE CR0 ->      }T
 T{ ' CR0 >BODY -> HERE }T
+
+\ TODO: F.6.1.0560 >IN
+
+\ TODO: F.6.1.0570 >NUMBER
+
+\ F.6.1.0580 >R
+
+T{ : GR1 >R R> ; -> }T
+T{ : GR2 >R R@ R> DROP ; -> }T
+T{ 123 GR1 -> 123 }T
+T{ 123 GR2 -> 123 }T
+T{  1S GR1 ->  1S }T      ( Return stack holds cells )
 
 
 \ Finished
