@@ -395,6 +395,10 @@ T{       0 MIN-INT > -> <TRUE>  }T
 T{ MAX-INT MIN-INT > -> <TRUE>  }T
 T{ MAX-INT       0 > -> <TRUE>  }T
 
+\ F.6.1.0550 >BODY
+T{  CREATE CR0 ->      }T
+T{ ' CR0 >BODY -> HERE }T
+
 
 \ Finished
 
