@@ -12,6 +12,8 @@
 
 : 2dup over over ;
 : 2drop drop drop ;
+: 2over 3 pick 3 pick ;
+: 2swap rot >r rot r> ;
 
 : >mark    ( -- addr )  here 0 , ;           \ 记下当前位置，填0做占位
 : >resolve ( addr -- )  here swap ! ;        \ 将 addr 处的0改为当前地址

@@ -313,6 +313,24 @@ T{          1S 2/ ->   1S }T \ MSB PROPOGATED
 T{    1S 1 XOR 2/ ->   1S }T
 T{ MSB 2/ MSB AND ->  MSB }T
 
+\ F.6.1.0350 2@
+
+\ F.6.1.0370 2DROP
+
+T{ 1 2 2DROP -> }T
+
+\ F.6.1.0380 2DUP
+
+T{ 1 2 2DUP -> 1 2 1 2 }T
+
+\ F.6.1.0400 2OVER
+
+T{ 1 2 3 4 2OVER -> 1 2 3 4 1 2 }T
+
+\ F.6.1.0430 2SWAP
+
+T{ 1 2 3 4 2SWAP -> 3 4 1 2 }T
+
 
 \ Finished
 
