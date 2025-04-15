@@ -331,6 +331,17 @@ T{ 1 2 3 4 2OVER -> 1 2 3 4 1 2 }T
 
 T{ 1 2 3 4 2SWAP -> 3 4 1 2 }T
 
+\ F.6.1.0450 :
+T{ : NOP : POSTPONE ; ; -> }T
+T{ NOP NOP1 NOP NOP2 -> }T
+T{ NOP1 -> }T
+T{ NOP2 -> }T
+
+T{ : GDX   123 ;    : GDX   GDX 234 ; -> }T
+T{ GDX -> 123 234 }T
+
+\ F.6.1.0460 ;
+
 
 \ Finished
 
