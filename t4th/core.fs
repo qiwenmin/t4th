@@ -42,10 +42,10 @@
 : 2* 2 * ;
 : 2/ 2 / ;
 
-: < ( a b -- flag ) - 0< ;
-: > ( a b -- flag ) swap - 0< ;
 : = ( a b -- flag ) - 0= ;
-: <> ( a b -- flag ) - 0= 0= ;
+: <> ( a b -- flag ) = invert ;
+: > ( a b -- flag ) \ flag = not (a <= b)
+  2dup < rot rot = or invert ;
 
 : U< < ;
 : U> > ;

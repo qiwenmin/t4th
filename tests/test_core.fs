@@ -299,6 +299,7 @@ T{ MID-UINT+1 1- -> MID-UINT }T
 \ F.6.1.0310 2!
 
 \ F.6.1.0320 2*
+
 T{   0S 2*       ->   0S }T
 T{    1 2*       ->    2 }T
 T{ 4000 2*       -> 8000 }T
@@ -306,6 +307,7 @@ T{   1S 2* 1 XOR ->   1S }T
 T{  MSB 2*       ->   0S }T
 
 \ F.6.1.0330 2/
+
 T{          0S 2/ ->   0S }T
 T{           1 2/ ->    0 }T
 T{        4000 2/ -> 2000 }T
@@ -332,6 +334,7 @@ T{ 1 2 3 4 2OVER -> 1 2 3 4 1 2 }T
 T{ 1 2 3 4 2SWAP -> 3 4 1 2 }T
 
 \ F.6.1.0450 :
+
 T{ : NOP : POSTPONE ; ; -> }T
 T{ NOP NOP1 NOP NOP2 -> }T
 T{ NOP1 -> }T
@@ -341,6 +344,56 @@ T{ : GDX   123 ;    : GDX   GDX 234 ; -> }T
 T{ GDX -> 123 234 }T
 
 \ F.6.1.0460 ;
+
+\ F.6.1.0480 <
+
+T{       0       1 < -> <TRUE>  }T
+T{       1       2 < -> <TRUE>  }T
+T{      -1       0 < -> <TRUE>  }T
+T{      -1       1 < -> <TRUE>  }T
+T{ MIN-INT       0 < -> <TRUE>  }T
+T{ MIN-INT MAX-INT < -> <TRUE>  }T
+T{       0 MAX-INT < -> <TRUE>  }T
+T{       0       0 < -> <FALSE> }T
+T{       1       1 < -> <FALSE> }T
+T{       1       0 < -> <FALSE> }T
+T{       2       1 < -> <FALSE> }T
+T{       0      -1 < -> <FALSE> }T
+T{       1      -1 < -> <FALSE> }T
+T{       0 MIN-INT < -> <FALSE> }T
+T{ MAX-INT MIN-INT < -> <FALSE> }T
+T{ MAX-INT       0 < -> <FALSE> }T
+
+\ F.6.1.0490 <#
+
+\ F.6.1.0530 =
+
+T{  0  0 = -> <TRUE>  }T
+T{  1  1 = -> <TRUE>  }T
+T{ -1 -1 = -> <TRUE>  }T
+T{  1  0 = -> <FALSE> }T
+T{ -1  0 = -> <FALSE> }T
+T{  0  1 = -> <FALSE> }T
+T{  0 -1 = -> <FALSE> }T
+
+\ F.6.1.0540 >
+
+T{       0       1 > -> <FALSE> }T
+T{       1       2 > -> <FALSE> }T
+T{      -1       0 > -> <FALSE> }T
+T{      -1       1 > -> <FALSE> }T
+T{ MIN-INT       0 > -> <FALSE> }T
+T{ MIN-INT MAX-INT > -> <FALSE> }T
+T{       0 MAX-INT > -> <FALSE> }T
+T{       0       0 > -> <FALSE> }T
+T{       1       1 > -> <FALSE> }T
+T{       1       0 > -> <TRUE>  }T
+T{       2       1 > -> <TRUE>  }T
+T{       0      -1 > -> <TRUE>  }T
+T{       1      -1 > -> <TRUE>  }T
+T{       0 MIN-INT > -> <TRUE>  }T
+T{ MAX-INT MIN-INT > -> <TRUE>  }T
+T{ MAX-INT       0 > -> <TRUE>  }T
 
 
 \ Finished

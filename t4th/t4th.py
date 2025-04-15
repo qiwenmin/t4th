@@ -167,6 +167,7 @@ class T4th:
 
             (T4th._Word('UM/MOD'), self._word_um_mod),
 
+            (T4th._Word('<'), self._word_less),
             (T4th._Word('0='), self._word_zero_equ),
             (T4th._Word('0<'), self._word_zero_less),
 
@@ -408,6 +409,10 @@ class T4th:
 
         self._data_stack.append(r)
         self._data_stack.append(q)
+
+    def _word_less(self):
+        self._check_stack(2)
+        self._data_stack.append(-1 if self._data_stack.pop() > self._data_stack.pop() else 0)
 
     def _word_zero_equ(self):
         self._check_stack(1)
