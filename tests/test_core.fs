@@ -450,6 +450,12 @@ T{ 0S 1S AND -> 0S }T
 T{ 1S 0S AND -> 0S }T
 T{ 1S 1S AND -> 1S }T
 
+\ F.6.1.0750 BASE
+
+: GN2 \ ( -- 16 10 )
+   BASE @ >R HEX BASE @ DECIMAL BASE @ R> BASE ! ;
+T{ GN2 -> 10 A }T
+
 
 \ Finished
 
