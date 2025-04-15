@@ -45,7 +45,7 @@
 : = ( a b -- flag ) - 0= ;
 : <> ( a b -- flag ) = invert ;
 : > ( a b -- flag ) \ flag = not (a <= b)
-  2dup < rot rot = or invert ;
+  2dup < -rot = or invert ;
 
 : U< < ;
 : U> > ;
@@ -197,7 +197,7 @@ variable hld
 : <# pad hld ! ;
 
 : UD/MOD  ( ud u -- rem quot )
-    >R 0 R@ UM/MOD ROT ROT R> UM/MOD ROT
+    >R 0 R@ UM/MOD -ROT R> UM/MOD ROT
 ;
 
 : HOLD  ( char -- )
