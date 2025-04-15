@@ -412,6 +412,12 @@ T{ 123 GR1 -> 123 }T
 T{ 123 GR2 -> 123 }T
 T{  1S GR1 ->  1S }T      ( Return stack holds cells )
 
+\ F.6.1.0630 ?DUP
+
+T{ -1 ?DUP -> -1 -1 }T
+T{  0 ?DUP ->  0    }T
+T{  1 ?DUP ->  1  1 }T
+
 
 \ Finished
 
