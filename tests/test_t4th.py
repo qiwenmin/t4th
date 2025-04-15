@@ -167,6 +167,67 @@ class TestT4th(unittest.TestCase):
         """
         self._run_scripts(scripts)
 
+    def test_could_not_find_word(self):
+        scripts = "' word-not-exists"
+        output_contains = r'Error: Undefined word: `word-not-exists`'
+        self._run_scripts_result_contains(scripts, output_contains)
+
+    def test_unclosed_bracket_else(self):
+        scripts = "[ELSE]\n"
+        output_contains = r'Error: Unclosed \[ELSE\]'
+        self._run_scripts_result_contains(scripts, output_contains)
+
+    def test_3_level_loop(self):
+        scripts = textwrap.dedent("""
+            : 3level-loop
+                10 0 DO
+                    10 0 DO
+                        10 0 DO
+                            I . J . K . CR
+                        LOOP
+                    LOOP
+                LOOP
+            ;
+            3level-loop
+        """)
+        output_contains = r'9 9 8\n0 0 9\n1 0 9\n'
+        self._run_scripts_result_contains(scripts, output_contains)
+
+    def test_stack_underflow(self):
+        scripts = "drop"
+        output_contains = r'Error: Stack underflow'
+        self._run_scripts_result_contains(scripts, output_contains)
+
+    def test_return_stack_underflow(self):
+        scripts = "r>"
+        output_contains = r'Error: Return stack underflow'
+        self._run_scripts_result_contains(scripts, output_contains)
+
+    def test_memory_overflow(self):
+        scripts = "1000000 allot 42 ,"
+        output_contains = r'Error: Memory overflow'
+        self._run_scripts_result_contains(scripts, output_contains)
+
+    def test_get_next_word_fail(self):
+        scripts = "forget"
+        output_contains = r'Error: Could not get word name'
+        self._run_scripts_result_contains(scripts, output_contains)
+
+    def test_clean_up_in_definiing_word(self):
+        scripts = ": foo 123 non-exist-word ;\nwords"
+        output_contains = r'\nUSER-WORD-BEGIN '
+        self._run_scripts_result_contains(scripts, output_contains)
+
+    def test_non_interactive_word(self):
+        scripts = "do"
+        output_contains = r'Error: Non-interactive word "do"'
+        self._run_scripts_result_contains(scripts, output_contains)
+
+    def test_invalid_char(self):
+        scripts = "'a-"
+        output_contains = r'Error: Unknown word "\'a-"'
+        self._run_scripts_result_contains(scripts, output_contains)
+
 
     def test_postpone(self):
         "F.6.1.2033"

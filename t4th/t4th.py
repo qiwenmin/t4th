@@ -929,5 +929,5 @@ def main():
     print(f'T4th version {t4th._version} [ Free memory {len(t4th._memory) - t4th._here()} ]')
     t4th.interpret()  # 进入命令交互
 
-if __name__ == '__main__':
+if __name__ == '__main__': # pragma: no cover
     main()
