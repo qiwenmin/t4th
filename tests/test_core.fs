@@ -494,6 +494,20 @@ T{ 1 CELLS 1 <         -> <FALSE> }T
 T{ 1 CELLS 1 CHARS MOD ->    0    }T
 T{ 1S BITS 10 <        -> <FALSE> }T
 
+\ F.6.1.0895 CHAR
+
+T{ CHAR X     -> 58 }T
+T{ CHAR HELLO -> 48 }T
+
+\ F.6.1.0897 CHAR+
+
+\ F.6.1.0898 CHARS
+
+( CHARACTERS >= 1 AU, <= SIZE OF CELL, >= 8 BITS )
+T{ 1 CHARS 1 <       -> <FALSE> }T
+T{ 1 CHARS 1 CELLS > -> <FALSE> }T
+( TBD: HOW TO FIND NUMBER OF BITS? )
+
 
 \ Finished
 
