@@ -600,6 +600,49 @@ T{ 1 DUP -> 1 1 }T
 ;
 T{ OUTPUT-TEST -> }T
 
+\ TODO: F.6.1.1345 ENVIRONMENT?
+
+\ TODO: F.6.1.1360 EVALUATE
+
+\ F.6.1.1370 EXECUTE
+
+\ F.6.1.1380 EXIT
+
+\ TODO: F.6.1.1540 FILL
+
+\ TODO: F.6.1.1561 FM/MOD
+
+\ F.6.1.1650 HERE
+
+\ F.6.1.1670 HOLD
+
+: GP1 <# 41 HOLD 42 HOLD 0 0 #> S" BA" S= ;
+T{ GP1 -> <TRUE> }T
+
+\ F.6.1.1680 I
+
+\ F.6.1.1700 IF
+
+T{ : GI1 IF 123 THEN ; -> }T
+T{ : GI2 IF 123 ELSE 234 THEN ; -> }T
+T{  0 GI1 ->     }T
+T{  1 GI1 -> 123 }T
+T{ -1 GI1 -> 123 }T
+T{  0 GI2 -> 234 }T
+T{  1 GI2 -> 123 }T
+T{ -1 GI1 -> 123 }T
+\ Multiple ELSEs in an IF statement
+: melse IF 1 ELSE 2 ELSE 3 ELSE 4 ELSE 5 THEN ;
+T{ <FALSE> melse -> 2 4 }T
+T{ <TRUE>  melse -> 1 3 5 }T
+
+\ TODO: F.6.1.1710 IMMEDIATE
+
+\ F.6.1.1720 INVERT
+
+T{ 0S INVERT -> 1S }T
+T{ 1S INVERT -> 0S }T
+
 
 \ Finished
 
