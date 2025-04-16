@@ -158,6 +158,7 @@ class T4th:
             (T4th._Word('-'), self._word_sub),
             (T4th._Word('*'), self._word_mul),
             (T4th._Word('/'), self._word_div),
+            (T4th._Word('MOD'), self._word_mod),
 
             (T4th._Word('INVERT'), self._word_invert),
             (T4th._Word('AND'), self._word_and),
@@ -374,6 +375,16 @@ class T4th:
             raise ValueError('Division by zero')
 
         self._data_stack.append(b // a)
+
+    def _word_mod(self):
+        self._check_stack(2)
+
+        n2 = self._data_stack.pop()
+        n1 = self._data_stack.pop()
+        if n2 == 0:
+            raise ValueError('Division by zero')
+
+        self._data_stack.append(n1 % n2)
 
     def _word_invert(self):
         self._check_stack(1)

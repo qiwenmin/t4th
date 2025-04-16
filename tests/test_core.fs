@@ -456,6 +456,44 @@ T{ 1S 1S AND -> 1S }T
    BASE @ >R HEX BASE @ DECIMAL BASE @ R> BASE ! ;
 T{ GN2 -> 10 A }T
 
+\ F.6.1.0760 BEGIN
+
+\ F.6.1.0770 BL
+
+T{ BL -> 20 }T
+
+\ F.6.1.0850 C!
+
+\ F.6.1.0860 C,
+
+HERE 1 C,
+HERE 2 C,
+CONSTANT 2NDC
+CONSTANT 1STC
+T{    1STC 2NDC U< -> <TRUE> }T \ HERE MUST GROW WITH ALLOT
+T{      1STC CHAR+ ->  2NDC  }T \ ... BY ONE CHAR
+T{  1STC 1 CHARS + ->  2NDC  }T
+T{ 1STC C@ 2NDC C@ ->   1 2  }T
+T{       3 1STC C! ->        }T
+T{ 1STC C@ 2NDC C@ ->   3 2  }T
+T{       4 2NDC C! ->        }T
+T{ 1STC C@ 2NDC C@ ->   3 4  }T
+
+\ F.6.1.0870 C@
+
+\ F.6.1.0880 CELL+
+
+\ F.6.1.0890 CELLS
+
+: BITS ( X -- U )
+   0 SWAP BEGIN DUP WHILE
+     DUP MSB AND IF >R 1+ R> THEN 2*
+   REPEAT DROP ;
+( CELLS >= 1 AU, INTEGRAL MULTIPLE OF CHAR SIZE, >= 16 BITS )
+T{ 1 CELLS 1 <         -> <FALSE> }T
+T{ 1 CELLS 1 CHARS MOD ->    0    }T
+T{ 1S BITS 10 <        -> <FALSE> }T
+
 
 \ Finished
 

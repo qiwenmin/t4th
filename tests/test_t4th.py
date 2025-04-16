@@ -153,6 +153,10 @@ class TestT4th(unittest.TestCase):
         output_contains = r'Error: Division by zero'
         self._run_scripts_result_contains(scripts, output_contains)
 
+        scripts = "1 0 mod ."
+        output_contains = r'Error: Division by zero'
+        self._run_scripts_result_contains(scripts, output_contains)
+
         scripts = "1 1 0 um/mod ."
         output_contains = r'Error: Division by zero'
         self._run_scripts_result_contains(scripts, output_contains)
