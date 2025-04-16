@@ -23,6 +23,9 @@ def int_to_base(n: int) -> str:
         n //= base()
     return '-' + res if is_negative else res
 
+def i2u(n: int):
+    return uint_type(n).value
+
 class I(c_int):
     def __repr__(self):
         return f'{int_to_base(self.value)}'

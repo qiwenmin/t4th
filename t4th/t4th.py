@@ -134,6 +134,7 @@ class T4th:
 
             (T4th._Word('.S'), self._word_dot_s),
             (T4th._Word('.'), self._word_dot),
+            (T4th._Word('U.'), self._word_u_dot),
             (T4th._Word('EMIT'), self._word_emit),
             (T4th._Word('CR'), self._word_cr),
 
@@ -204,6 +205,7 @@ class T4th:
             (T4th._Word('[ELSE]', flag=IM), self._word_bracket_else),
 
             (T4th._Word('DO', flag=IM|NI), self._word_do),
+            (T4th._Word('?DO', flag=IM|NI), self._word_question_do),
             (T4th._Word('LOOP', flag=IM|NI), self._word_loop),
             (T4th._Word('LEAVE', flag=NI), self._word_leave),
             (T4th._Word('UNLOOP', flag=NI), self._word_unloop),
@@ -264,12 +266,14 @@ class T4th:
 
     def _word_dot(self):
         self._check_stack(1)
-
         print(f'{tn.int_to_base(self._data_stack.pop())} ', end='', flush=True)
+
+    def _word_u_dot(self):
+        self._check_stack(1)
+        print(f'{tn.int_to_base(tn.i2u(self._data_stack.pop()))} ', end='', flush=True)
 
     def _word_emit(self):
         self._check_stack(1)
-
         print(chr(self._data_stack.pop()), end='', flush=True)
 
     def _word_cr(self):
@@ -622,6 +626,26 @@ class T4th:
             self._return_stack.append(limit)
             self._return_stack.append(index)
             self._pc += 1
+
+    def _word_question_do(self):
+        if self._get_var_value('STATE') != 0:
+            # 定义中
+            self._memory_append(self._find_word('?DO').ptr)
+            self._data_stack.append(self._here()) # 需要loop在编译时回填的leave_addr的位置
+            self._memory_append(0) # 填0占位
+        else:
+            # 运行时
+            index = self._data_stack.pop()
+            limit = self._data_stack.pop()
+            leave_addr = self._memory[self._pc]
+
+            if limit != index:
+                self._return_stack.append(leave_addr)
+                self._return_stack.append(limit)
+                self._return_stack.append(index)
+                self._pc += 1
+            else:
+                self._pc = leave_addr
 
     def _word_loop(self):
         if self._get_var_value('STATE') != 0:

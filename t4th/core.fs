@@ -91,6 +91,9 @@ $20 constant bl
 
 : ?dup dup if dup then ;
 
+: space bl emit ;
+: spaces 0 max 0 ?do space loop ;
+
 : [char]  ( -- )
     char
     postpone literal
