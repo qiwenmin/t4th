@@ -207,6 +207,7 @@ class T4th:
             (T4th._Word('DO', flag=IM|NI), self._word_do),
             (T4th._Word('?DO', flag=IM|NI), self._word_question_do),
             (T4th._Word('LOOP', flag=IM|NI), self._word_loop),
+            (T4th._Word('+LOOP', flag=IM|NI), self._word_plus_loop),
             (T4th._Word('LEAVE', flag=NI), self._word_leave),
             (T4th._Word('UNLOOP', flag=NI), self._word_unloop),
             (T4th._Word('I', flag=NI), self._word_i),
@@ -662,7 +663,38 @@ class T4th:
             limit = self._return_stack[-2]
 
             index += 1
+            index = tn.I(index).value
+
             if index < limit:
+                self._return_stack[-1] = index
+                self._pc = self._memory[self._pc]
+            else:
+                self._return_stack.pop()
+                self._return_stack.pop()
+                self._return_stack.pop()
+                self._pc += 1
+
+    def _word_plus_loop(self):
+        if self._get_var_value('STATE') != 0:
+            # 定义中
+            self._check_stack(1)
+            self._memory_append(self._find_word('+LOOP').ptr)
+            leave_fill_addr = self._data_stack.pop()
+            self._memory_append(leave_fill_addr + 1)
+            self._memory[leave_fill_addr] = self._here()
+        else:
+            # 运行时
+            self._check_return_stack(3)
+            index = self._return_stack[-1]
+            limit = self._return_stack[-2]
+
+            self._check_stack(1)
+
+            step = self._data_stack.pop()
+            index += step
+            index = tn.I(index).value
+
+            if (step > 0 and index < limit) or (step < 0 and index >= limit) or (step == 0):
                 self._return_stack[-1] = index
                 self._pc = self._memory[self._pc]
             else:

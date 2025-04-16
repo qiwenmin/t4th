@@ -14,6 +14,8 @@ class TestStandard(unittest.TestCase):
         self.t4th.load_and_run_file(os.path.join(current_dir, 'ttester.fs'))
 
     def test_core(self):
+        self.maxDiff = None
+
         with patch('sys.stdout', new=StringIO()) as mock_stdout:
             current_dir = os.path.dirname(__file__)
             self.t4th.load_and_run_file(os.path.join(current_dir, 'test_core.fs'))
