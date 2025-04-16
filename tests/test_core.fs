@@ -196,9 +196,53 @@ T{ MID-UINT+1 1 RSHIFT 2 *               -> MID-UINT+1 }T
 T{ MID-UINT+1 2 RSHIFT 4 *               -> MID-UINT+1 }T
 T{ MID-UINT+1 1 RSHIFT MID-UINT+1 OR 2 * -> MID-UINT+1 }T
 
-\ TODO: F.6.1.0110 */MOD
+\ F.6.1.0110 */MOD
 
-\ TODO: F.6.1.0100 */
+IFFLOORED    : T*/MOD >R M* R> FM/MOD ;
+IFSYM        : T*/MOD >R M* R> SM/REM ;
+T{       0 2       1 */MOD ->       0 2       1 T*/MOD }T
+T{       1 2       1 */MOD ->       1 2       1 T*/MOD }T
+T{       2 2       1 */MOD ->       2 2       1 T*/MOD }T
+T{      -1 2       1 */MOD ->      -1 2       1 T*/MOD }T
+T{      -2 2       1 */MOD ->      -2 2       1 T*/MOD }T
+T{       0 2      -1 */MOD ->       0 2      -1 T*/MOD }T
+T{       1 2      -1 */MOD ->       1 2      -1 T*/MOD }T
+T{       2 2      -1 */MOD ->       2 2      -1 T*/MOD }T
+T{      -1 2      -1 */MOD ->      -1 2      -1 T*/MOD }T
+T{      -2 2      -1 */MOD ->      -2 2      -1 T*/MOD }T
+T{       2 2       2 */MOD ->       2 2       2 T*/MOD }T
+T{      -1 2      -1 */MOD ->      -1 2      -1 T*/MOD }T
+T{      -2 2      -2 */MOD ->      -2 2      -2 T*/MOD }T
+T{       7 2       3 */MOD ->       7 2       3 T*/MOD }T
+T{       7 2      -3 */MOD ->       7 2      -3 T*/MOD }T
+T{      -7 2       3 */MOD ->      -7 2       3 T*/MOD }T
+T{      -7 2      -3 */MOD ->      -7 2      -3 T*/MOD }T
+T{ MAX-INT 2 MAX-INT */MOD -> MAX-INT 2 MAX-INT T*/MOD }T
+T{ MIN-INT 2 MIN-INT */MOD -> MIN-INT 2 MIN-INT T*/MOD }T
+
+\ F.6.1.0100 */
+
+IFFLOORED    : T*/ T*/MOD SWAP DROP ;
+IFSYM        : T*/ T*/MOD SWAP DROP ;
+T{       0 2       1 */ ->       0 2       1 T*/ }T
+T{       1 2       1 */ ->       1 2       1 T*/ }T
+T{       2 2       1 */ ->       2 2       1 T*/ }T
+T{      -1 2       1 */ ->      -1 2       1 T*/ }T
+T{      -2 2       1 */ ->      -2 2       1 T*/ }T
+T{       0 2      -1 */ ->       0 2      -1 T*/ }T
+T{       1 2      -1 */ ->       1 2      -1 T*/ }T
+T{       2 2      -1 */ ->       2 2      -1 T*/ }T
+T{      -1 2      -1 */ ->      -1 2      -1 T*/ }T
+T{      -2 2      -1 */ ->      -2 2      -1 T*/ }T
+T{       2 2       2 */ ->       2 2       2 T*/ }T
+T{      -1 2      -1 */ ->      -1 2      -1 T*/ }T
+T{      -2 2      -2 */ ->      -2 2      -2 T*/ }T
+T{       7 2       3 */ ->       7 2       3 T*/ }T
+T{       7 2      -3 */ ->       7 2      -3 T*/ }T
+T{      -7 2       3 */ ->      -7 2       3 T*/ }T
+T{      -7 2      -3 */ ->      -7 2      -3 T*/ }T
+T{ MAX-INT 2 MAX-INT */ -> MAX-INT 2 MAX-INT T*/ }T
+T{ MIN-INT 2 MIN-INT */ -> MIN-INT 2 MIN-INT T*/ }T
 
 \ F.6.1.0120 +
 
@@ -239,7 +283,64 @@ T{  1 1ST +!       ->   }T
 T{    1ST @        -> 1 }T
 T{ -1 1ST +! 1ST @ -> 0 }T
 
-\ TODO: F.6.1.0140 +LOOP
+\ F.6.1.0140 +LOOP
+
+decimal
+
+T{ : GD2 DO I -1 +LOOP ; -> }T
+T{        1          4 GD2 -> 4 3 2  1 }T
+T{       -1          2 GD2 -> 2 1 0 -1 }T
+T{ MID-UINT MID-UINT+1 GD2 -> MID-UINT+1 MID-UINT }T
+VARIABLE gditerations
+VARIABLE gdincrement
+
+: gd7 ( limit start increment -- )
+   gdincrement !
+   0 gditerations !
+   DO
+     1 gditerations +!
+     I
+     gditerations @ 6 = IF LEAVE THEN
+     gdincrement @
+   +LOOP gditerations @
+;
+
+T{    4  4  -1 gd7 ->  4                  1  }T
+T{    1  4  -1 gd7 ->  4  3  2  1         4  }T
+T{    4  1  -1 gd7 ->  1  0 -1 -2  -3  -4 6  }T
+T{    4  1   0 gd7 ->  1  1  1  1   1   1 6  }T
+T{    0  0   0 gd7 ->  0  0  0  0   0   0 6  }T
+T{    1  4   0 gd7 ->  4  4  4  4   4   4 6  }T
+T{    1  4   1 gd7 ->  4  5  6  7   8   9 6  }T
+T{    4  1   1 gd7 ->  1  2  3            3  }T
+T{    4  4   1 gd7 ->  4  5  6  7   8   9 6  }T
+T{    2 -1  -1 gd7 -> -1 -2 -3 -4  -5  -6 6  }T
+T{   -1  2  -1 gd7 ->  2  1  0 -1         4  }T
+T{    2 -1   0 gd7 -> -1 -1 -1 -1  -1  -1 6  }T
+T{   -1  2   0 gd7 ->  2  2  2  2   2   2 6  }T
+T{   -1  2   1 gd7 ->  2  3  4  5   6   7 6  }T
+T{    2 -1   1 gd7 -> -1 0 1              3  }T
+T{  -20 30 -10 gd7 -> 30 20 10  0 -10 -20 6  }T
+T{  -20 31 -10 gd7 -> 31 21 11  1  -9 -19 6  }T
+T{  -20 29 -10 gd7 -> 29 19  9 -1 -11     5  }T
+
+\ With large and small increments
+
+MAX-UINT 8 RSHIFT 1+ CONSTANT ustep
+ustep NEGATE CONSTANT -ustep
+MAX-INT 7 RSHIFT 1+ CONSTANT step
+step NEGATE CONSTANT -step
+
+VARIABLE bump
+
+T{  : gd8 bump ! DO 1+ bump @ +LOOP ; -> }T
+
+T{  0 MAX-UINT 0 ustep gd8 -> 256 }T
+T{  0 0 MAX-UINT -ustep gd8 -> 256 }T
+T{  0 MAX-INT MIN-INT step gd8 -> 256 }T
+T{  0 MIN-INT MAX-INT -step gd8 -> 256 }T
+
+hex
 
 \ F.6.1.0160 -
 
@@ -260,9 +361,57 @@ T{ MID-UINT+1  1 - -> MID-UINT }T
 
 T{ : pb1 CR ." You should see 2345: "." 2345"; pb1 -> }T
 
-\ TODO: F.6.1.0230 /
+\ F.6.1.0240 /MOD
 
-\ TODO: F.6.1.0240 /MOD
+IFFLOORED    : T/MOD >R S>D R> FM/MOD ;
+IFSYM        : T/MOD >R S>D R> SM/REM ;
+T{       0       1 /MOD ->       0       1 T/MOD }T
+T{       1       1 /MOD ->       1       1 T/MOD }T
+T{       2       1 /MOD ->       2       1 T/MOD }T
+T{      -1       1 /MOD ->      -1       1 T/MOD }T
+T{      -2       1 /MOD ->      -2       1 T/MOD }T
+T{       0      -1 /MOD ->       0      -1 T/MOD }T
+T{       1      -1 /MOD ->       1      -1 T/MOD }T
+T{       2      -1 /MOD ->       2      -1 T/MOD }T
+T{      -1      -1 /MOD ->      -1      -1 T/MOD }T
+T{      -2      -1 /MOD ->      -2      -1 T/MOD }T
+T{       2       2 /MOD ->       2       2 T/MOD }T
+T{      -1      -1 /MOD ->      -1      -1 T/MOD }T
+T{      -2      -2 /MOD ->      -2      -2 T/MOD }T
+T{       7       3 /MOD ->       7       3 T/MOD }T
+T{       7      -3 /MOD ->       7      -3 T/MOD }T
+T{      -7       3 /MOD ->      -7       3 T/MOD }T
+T{      -7      -3 /MOD ->      -7      -3 T/MOD }T
+T{ MAX-INT       1 /MOD -> MAX-INT       1 T/MOD }T
+T{ MIN-INT       1 /MOD -> MIN-INT       1 T/MOD }T
+T{ MAX-INT MAX-INT /MOD -> MAX-INT MAX-INT T/MOD }T
+T{ MIN-INT MIN-INT /MOD -> MIN-INT MIN-INT T/MOD }T
+
+\ F.6.1.0230 /
+
+IFFLOORED    : T/ T/MOD SWAP DROP ;
+IFSYM        : T/ T/MOD SWAP DROP ;
+T{       0       1 / ->       0       1 T/ }T
+T{       1       1 / ->       1       1 T/ }T
+T{       2       1 / ->       2       1 T/ }T
+T{      -1       1 / ->      -1       1 T/ }T
+T{      -2       1 / ->      -2       1 T/ }T
+T{       0      -1 / ->       0      -1 T/ }T
+T{       1      -1 / ->       1      -1 T/ }T
+T{       2      -1 / ->       2      -1 T/ }T
+T{      -1      -1 / ->      -1      -1 T/ }T
+T{      -2      -1 / ->      -2      -1 T/ }T
+T{       2       2 / ->       2       2 T/ }T
+T{      -1      -1 / ->      -1      -1 T/ }T
+T{      -2      -2 / ->      -2      -2 T/ }T
+T{       7       3 / ->       7       3 T/ }T
+T{       7      -3 / ->       7      -3 T/ }T
+T{      -7       3 / ->      -7       3 T/ }T
+T{      -7      -3 / ->      -7      -3 T/ }T
+T{ MAX-INT       1 / -> MAX-INT       1 T/ }T
+T{ MIN-INT       1 / -> MIN-INT       1 T/ }T
+T{ MAX-INT MAX-INT / -> MAX-INT MAX-INT T/ }T
+T{ MIN-INT MIN-INT / -> MIN-INT MIN-INT T/ }T
 
 \ F.6.1.0250 0<
 
@@ -420,11 +569,27 @@ T{  1 ?DUP ->  1  1 }T
 
 \ F.6.1.0650 @
 
-\ TODO: F.6.1.0690 ABS
+\ F.6.1.0690 ABS
+
+T{       0 ABS ->          0 }T
+T{       1 ABS ->          1 }T
+T{      -1 ABS ->          1 }T
+T{ MIN-INT ABS -> MID-UINT+1 }T
 
 \ TODO: F.6.1.0695 ACCEPT
 
-\ TODO: F.6.1.0705 ALIGN
+\ F.6.1.0705 ALIGN
+
+ALIGN 1 ALLOT HERE ALIGN HERE 3 CELLS ALLOT
+CONSTANT A-ADDR CONSTANT UA-ADDR
+T{ UA-ADDR ALIGNED -> A-ADDR }T
+T{       1 A-ADDR C!         A-ADDR       C@ ->       1 }T
+T{    1234 A-ADDR !          A-ADDR       @  ->    1234 }T
+T{ 123 456 A-ADDR 2!         A-ADDR       2@ -> 123 456 }T
+T{       2 A-ADDR CHAR+ C!   A-ADDR CHAR+ C@ ->       2 }T
+T{       3 A-ADDR CELL+ C!   A-ADDR CELL+ C@ ->       3 }T
+T{    1234 A-ADDR CELL+ !    A-ADDR CELL+ @  ->    1234 }T
+T{ 123 456 A-ADDR CELL+ 2!   A-ADDR CELL+ 2@ -> 123 456 }T
 
 \ F.6.1.0710 ALLOT
 
@@ -516,12 +681,12 @@ T{ : EQU CONSTANT ; -> }T
 T{ X123 EQU Y123 -> }T
 T{ Y123 -> 123 }T
 
-\ F.6.1.1550 FIND
+\ TODO: F.6.1.1550 FIND
 
 HERE 3 C, CHAR G C, CHAR T C, CHAR 1 C, CONSTANT GT1STRING
 HERE 3 C, CHAR G C, CHAR T C, CHAR 2 C, CONSTANT GT2STRING
-\ TODO: T{ GT1STRING FIND -> ' GT1 -1 }T
-\ TODO: T{ GT2STRING FIND -> ' GT2 1  }T
+\ T{ GT1STRING FIND -> ' GT1 -1 }T
+\ T{ GT2STRING FIND -> ' GT2 1  }T
 ( HOW TO SEARCH FOR NON-EXISTENT WORD? )
 
 \ F.6.1.0980 COUNT
@@ -610,7 +775,42 @@ T{ OUTPUT-TEST -> }T
 
 \ TODO: F.6.1.1540 FILL
 
-\ TODO: F.6.1.1561 FM/MOD
+\ F.6.1.1561 FM/MOD
+
+T{       0 S>D              1 FM/MOD ->  0       0 }T
+T{       1 S>D              1 FM/MOD ->  0       1 }T
+T{       2 S>D              1 FM/MOD ->  0       2 }T
+T{      -1 S>D              1 FM/MOD ->  0      -1 }T
+T{      -2 S>D              1 FM/MOD ->  0      -2 }T
+T{       0 S>D             -1 FM/MOD ->  0       0 }T
+T{       1 S>D             -1 FM/MOD ->  0      -1 }T
+T{       2 S>D             -1 FM/MOD ->  0      -2 }T
+T{      -1 S>D             -1 FM/MOD ->  0       1 }T
+T{      -2 S>D             -1 FM/MOD ->  0       2 }T
+T{       2 S>D              2 FM/MOD ->  0       1 }T
+T{      -1 S>D             -1 FM/MOD ->  0       1 }T
+T{      -2 S>D             -2 FM/MOD ->  0       1 }T
+T{       7 S>D              3 FM/MOD ->  1       2 }T
+T{       7 S>D             -3 FM/MOD -> -2      -3 }T
+T{      -7 S>D              3 FM/MOD ->  2      -3 }T
+T{      -7 S>D             -3 FM/MOD -> -1       2 }T
+T{ MAX-INT S>D              1 FM/MOD ->  0 MAX-INT }T
+T{ MIN-INT S>D              1 FM/MOD ->  0 MIN-INT }T
+T{ MAX-INT S>D        MAX-INT FM/MOD ->  0       1 }T
+T{ MIN-INT S>D        MIN-INT FM/MOD ->  0       1 }T
+T{    1S 1                  4 FM/MOD ->  3 MAX-INT }T
+T{       1 MIN-INT M*       1 FM/MOD ->  0 MIN-INT }T
+T{       1 MIN-INT M* MIN-INT FM/MOD ->  0       1 }T
+T{       2 MIN-INT M*       2 FM/MOD ->  0 MIN-INT }T
+T{       2 MIN-INT M* MIN-INT FM/MOD ->  0       2 }T
+T{       1 MAX-INT M*       1 FM/MOD ->  0 MAX-INT }T
+T{       1 MAX-INT M* MAX-INT FM/MOD ->  0       1 }T
+T{       2 MAX-INT M*       2 FM/MOD ->  0 MAX-INT }T
+T{       2 MAX-INT M* MAX-INT FM/MOD ->  0       2 }T
+T{ MIN-INT MIN-INT M* MIN-INT FM/MOD ->  0 MIN-INT }T
+T{ MIN-INT MAX-INT M* MIN-INT FM/MOD ->  0 MAX-INT }T
+T{ MIN-INT MAX-INT M* MAX-INT FM/MOD ->  0 MIN-INT }T
+T{ MAX-INT MAX-INT M* MAX-INT FM/MOD ->  0 MAX-INT }T
 
 \ F.6.1.1650 HERE
 
@@ -680,9 +880,35 @@ T{          4        1 GD1 ->  1 2 3   }T
 T{          2       -1 GD1 -> -1 0 1   }T
 T{ MID-UINT+1 MID-UINT GD1 -> MID-UINT }T
 
-\ TODO: F.6.1.1805 LSHIFT
+\ F.6.1.1805 LSHIFT
 
-\ TODO: F.6.1.1810 M*
+T{   1 0 LSHIFT ->    1 }T
+T{   1 1 LSHIFT ->    2 }T
+T{   1 2 LSHIFT ->    4 }T
+T{   1 F LSHIFT -> 8000 }T      \ BIGGEST GUARANTEED SHIFT
+T{  1S 1 LSHIFT 1 XOR -> 1S }T
+T{ MSB 1 LSHIFT ->    0 }T
+
+\ F.6.1.1810 M*
+
+T{       0       0 M* ->       0 S>D }T
+T{       0       1 M* ->       0 S>D }T
+T{       1       0 M* ->       0 S>D }T
+T{       1       2 M* ->       2 S>D }T
+T{       2       1 M* ->       2 S>D }T
+T{       3       3 M* ->       9 S>D }T
+T{      -3       3 M* ->      -9 S>D }T
+T{       3      -3 M* ->      -9 S>D }T
+T{      -3      -3 M* ->       9 S>D }T
+T{       0 MIN-INT M* ->       0 S>D }T
+T{       1 MIN-INT M* -> MIN-INT S>D }T
+T{       2 MIN-INT M* ->       0 1S  }T
+T{       0 MAX-INT M* ->       0 S>D }T
+T{       1 MAX-INT M* -> MAX-INT S>D }T
+T{       2 MAX-INT M* -> MAX-INT     1 LSHIFT 0 }T
+T{ MIN-INT MIN-INT M* ->       0 MSB 1 RSHIFT   }T
+T{ MAX-INT MIN-INT M* ->     MSB MSB 2/         }T
+T{ MAX-INT MAX-INT M* ->       1 MSB 2/ INVERT  }T
 
 \ F.6.1.1870 MAX
 
@@ -722,11 +948,41 @@ T{       0 MIN-INT MIN -> MIN-INT }T
 T{ MAX-INT MIN-INT MIN -> MIN-INT }T
 T{ MAX-INT       0 MIN ->       0 }T
 
-\ TODO: F.6.1.1890 MOD
+\ F.6.1.1890 MOD
+
+IFFLOORED    : TMOD T/MOD DROP ;
+IFSYM        : TMOD T/MOD DROP ;
+T{       0       1 MOD ->       0       1 TMOD }T
+T{       1       1 MOD ->       1       1 TMOD }T
+T{       2       1 MOD ->       2       1 TMOD }T
+T{      -1       1 MOD ->      -1       1 TMOD }T
+T{      -2       1 MOD ->      -2       1 TMOD }T
+T{       0      -1 MOD ->       0      -1 TMOD }T
+T{       1      -1 MOD ->       1      -1 TMOD }T
+T{       2      -1 MOD ->       2      -1 TMOD }T
+T{      -1      -1 MOD ->      -1      -1 TMOD }T
+T{      -2      -1 MOD ->      -2      -1 TMOD }T
+T{       2       2 MOD ->       2       2 TMOD }T
+T{      -1      -1 MOD ->      -1      -1 TMOD }T
+T{      -2      -2 MOD ->      -2      -2 TMOD }T
+T{       7       3 MOD ->       7       3 TMOD }T
+T{       7      -3 MOD ->       7      -3 TMOD }T
+T{      -7       3 MOD ->      -7       3 TMOD }T
+T{      -7      -3 MOD ->      -7      -3 TMOD }T
+T{ MAX-INT       1 MOD -> MAX-INT       1 TMOD }T
+T{ MIN-INT       1 MOD -> MIN-INT       1 TMOD }T
+T{ MAX-INT MAX-INT MOD -> MAX-INT MAX-INT TMOD }T
+T{ MIN-INT MIN-INT MOD -> MIN-INT MIN-INT TMOD }T
 
 \ TODO: F.6.1.1900 MOVE
 
-\ TODO: F.6.1.1910 NEGATE
+\ F.6.1.1910 NEGATE
+
+T{  0 NEGATE ->  0 }T
+T{  1 NEGATE -> -1 }T
+T{ -1 NEGATE ->  1 }T
+T{  2 NEGATE -> -2 }T
+T{ -2 NEGATE ->  2 }T
 
 \ F.6.1.1980 OR
 
@@ -778,7 +1034,15 @@ T{ GC4 DROP DUP C@ SWAP CHAR+ C@ -> 58 59 }T
 : GC5 S" A String"2DROP ; \ There is no space between the " and 2DROP
 T{ GC5 -> }T
 
-\ TODO: F.6.1.2170S>D
+\ F.6.1.2170 S>D
+
+T{       0 S>D ->       0  0 }T
+T{       1 S>D ->       1  0 }T
+T{       2 S>D ->       2  0 }T
+T{      -1 S>D ->      -1 -1 }T
+T{      -2 S>D ->      -2 -1 }T
+T{ MIN-INT S>D -> MIN-INT -1 }T
+T{ MAX-INT S>D -> MAX-INT  0 }T
 
 \ TODO: F.6.1.2210 SIGN
 
@@ -821,9 +1085,29 @@ T{ MID-UINT        0 U< -> <FALSE> }T
 T{ MAX-UINT        0 U< -> <FALSE> }T
 T{ MAX-UINT MID-UINT U< -> <FALSE> }T
 
-\ TODO: F.6.1.2360 UM*
+\ F.6.1.2360 UM*
 
-\ TODO: F.6.1.2370 UM/MOD
+T{ 0 0 UM* -> 0 0 }T
+T{ 0 1 UM* -> 0 0 }T
+T{ 1 0 UM* -> 0 0 }T
+T{ 1 2 UM* -> 2 0 }T
+T{ 2 1 UM* -> 2 0 }T
+T{ 3 3 UM* -> 9 0 }T
+T{ MID-UINT+1 1 RSHIFT 2 UM* ->  MID-UINT+1 0 }T
+T{ MID-UINT+1          2 UM* ->           0 1 }T
+T{ MID-UINT+1          4 UM* ->           0 2 }T
+T{         1S          2 UM* -> 1S 1 LSHIFT 1 }T
+T{   MAX-UINT   MAX-UINT UM* ->    1 1 INVERT }T
+
+\ F.6.1.2370 UM/MOD
+
+T{        0            0        1 UM/MOD -> 0        0 }T
+T{        1            0        1 UM/MOD -> 0        1 }T
+T{        1            0        2 UM/MOD -> 1        0 }T
+T{        3            0        2 UM/MOD -> 1        1 }T
+T{ MAX-UINT        2 UM*        2 UM/MOD -> 0 MAX-UINT }T
+T{ MAX-UINT        2 UM* MAX-UINT UM/MOD -> 0        2 }T
+T{ MAX-UINT MAX-UINT UM* MAX-UINT UM/MOD -> 0 MAX-UINT }T
 
 \ F.6.1.2380 UNLOOP
 
@@ -892,7 +1176,7 @@ T{ GC3 -> 58 }T
 T{ : GT2 ['] GT1 ; IMMEDIATE -> }T
 T{ GT2 EXECUTE -> 123 }T
 
-\ TODO: F.6.1.2540 ]
+\ F.6.1.2540 ]
 
 \ TODO: F.6.2.0455 :NONAME
 

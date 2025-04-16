@@ -160,14 +160,22 @@ class T4th:
             (T4th._Word('*'), self._word_mul),
             (T4th._Word('/'), self._word_div),
             (T4th._Word('MOD'), self._word_mod),
+            (T4th._Word('/MOD'), self._word_slash_mod),
+
+            (T4th._Word('M*'), self._word_m_star),
+
+            (T4th._Word('UM*'), self._word_um_star),
+            (T4th._Word('UM/MOD'), self._word_um_slash_mod),
+
+            (T4th._Word('FM/MOD'), self._word_fm_slash_mod),
+            (T4th._Word('*/MOD'), self._word_star_slash_mod),
 
             (T4th._Word('INVERT'), self._word_invert),
             (T4th._Word('AND'), self._word_and),
             (T4th._Word('OR'), self._word_or),
             (T4th._Word('XOR'), self._word_xor),
             (T4th._Word('RSHIFT'), self._word_rshift),
-
-            (T4th._Word('UM/MOD'), self._word_um_mod),
+            (T4th._Word('LSHIFT'), self._word_lshift),
 
             (T4th._Word('<'), self._word_less),
             (T4th._Word('0='), self._word_zero_equ),
@@ -393,6 +401,82 @@ class T4th:
 
         self._data_stack.append(n1 % n2)
 
+    def _word_slash_mod(self):
+        self._check_stack(2)
+
+        n2 = self._data_stack.pop()
+        n1 = self._data_stack.pop()
+
+        if n2 == 0:
+            raise ValueError('Division by zero')
+
+        self._data_stack.append(n1 % n2)
+        self._data_stack.append(n1 // n2)
+
+    def _word_m_star(self):
+        self._check_stack(2)
+
+        n2 = self._data_stack.pop()
+        n1 = self._data_stack.pop()
+
+        (d1, d2) = tn.I(n2).m_star(n1)
+        self._data_stack.append(d1)
+        self._data_stack.append(d2)
+
+    def _word_um_star(self):
+        self._check_stack(2)
+        u2 = self._data_stack.pop()
+        u1 = self._data_stack.pop()
+
+        (ud1, ud2) = tn.I(u1).um_star(u2)
+
+        self._data_stack.append(ud1)
+        self._data_stack.append(ud2)
+
+    def _word_um_slash_mod(self):
+        self._check_stack(3)
+        u1 = self._data_stack.pop()
+        ud2 = self._data_stack.pop()
+        ud1 = self._data_stack.pop()
+
+        if u1 == 0:
+            raise ValueError('Division by zero')
+
+        (r, q) = tn.I(u1).um_mod(ud1, ud2)
+
+        self._data_stack.append(r)
+        self._data_stack.append(q)
+
+    def _word_fm_slash_mod(self):
+        self._check_stack(3)
+        n1 = self._data_stack.pop()
+        d2 = self._data_stack.pop()
+        d1 = self._data_stack.pop()
+
+        if n1 == 0:
+            raise ValueError('Division by zero')
+
+        (r, q) = tn.I(n1).fm_mod(d1, d2)
+
+        self._data_stack.append(r)
+        self._data_stack.append(q)
+
+    def _word_star_slash_mod(self):
+        self._check_stack(3)
+        n3 = self._data_stack.pop()
+        n2 = self._data_stack.pop()
+        n1 = self._data_stack.pop()
+
+        if n3 == 0:
+            raise ValueError('Division by zero')
+
+        d = n1 * n2
+        n4 = d % n3
+        n5 = d // n3
+
+        self._data_stack.append(n4)
+        self._data_stack.append(n5)
+
     def _word_invert(self):
         self._check_stack(1)
         self._data_stack.append(tn.I(self._data_stack.pop()).invert())
@@ -414,19 +498,10 @@ class T4th:
         shift = self._data_stack.pop()
         self._data_stack.append(tn.I(self._data_stack.pop()).rshift(shift))
 
-    def _word_um_mod(self):
-        self._check_stack(3)
-        u1 = self._data_stack.pop()
-        ud2 = self._data_stack.pop()
-        ud1 = self._data_stack.pop()
-
-        if u1 == 0:
-            raise ValueError('Division by zero')
-
-        (r, q) = tn.I(u1).um_mod(ud1, ud2)
-
-        self._data_stack.append(r)
-        self._data_stack.append(q)
+    def _word_lshift(self):
+        self._check_stack(2)
+        shift = self._data_stack.pop()
+        self._data_stack.append(tn.I(self._data_stack.pop()).lshift(shift))
 
     def _word_less(self):
         self._check_stack(2)
@@ -701,13 +776,14 @@ class T4th:
             index += step
             index = tn.I(index).value
 
-            # 判断index是否跨越limit
-            # step大于零时，跨越指的是：old_index < limit <= index
-            # step小于零时，跨越指的是：old_index >= limit > index
-            # step等于零，就判断limit和index是否相当吧
-            if not ((step > 0 and old_index < limit and limit <= index) or
-                (step < 0 and old_index >= limit and limit > index) or
-                (step == 0 and limit == index)):
+            if not (
+                (step > 0 and
+                    (tn.I(limit) - tn.I(old_index)).value > 0 and
+                    (tn.I(index) - tn.I(limit)).value >= 0)
+                or
+                (step < 0 and
+                    (tn.I(limit) - tn.I(old_index)).value <= 0 and
+                    (tn.I(index) - tn.I(limit)).value < 0)):
                 self._return_stack[-1] = index
                 self._pc = self._memory[self._pc]
             else:

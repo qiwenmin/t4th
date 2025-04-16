@@ -1,9 +1,11 @@
-from ctypes import c_int, c_uint, sizeof
+from ctypes import c_int32, c_uint32, c_int64, c_uint64, sizeof
 
 base = lambda : 10
 
-int_type = c_int
-uint_type = c_uint
+int_type = c_int32
+uint_type = c_uint32
+dint_type = c_int64
+duint_type = c_uint64
 
 int_bits = sizeof(int_type) * 8
 int_mask = (1 << int_bits) - 1
@@ -26,7 +28,7 @@ def int_to_base(n: int) -> str:
 def i2u(n: int):
     return uint_type(n).value
 
-class I(c_int):
+class I(int_type):
     def __repr__(self):
         return f'{int_to_base(self.value)}'
 
@@ -45,6 +47,9 @@ class I(c_int):
     def rshift(self, n):
         return I((self.value & int_mask) >> n)
 
+    def lshift(self, n):
+        return I(((self.value & int_mask) << n) & int_mask)
+
     def um_mod(self, ud1, ud2):
         u1 = uint_type(self.value).value & int_mask
         ud1 = uint_type(ud1).value & int_mask
@@ -56,7 +61,37 @@ class I(c_int):
         r = ud % u1
         return (I(r), I(q))
 
+    def um_star(self, u):
+        u1 = uint_type(self.value).value & int_mask
+        u2 = uint_type(u).value & int_mask
 
+        ud = u1 * u2
+        ud1 = ud & int_mask
+        ud2 = (ud >> int_bits) & int_mask
+
+        return (I(ud1), I(ud2))
+
+    def fm_mod(self, d1, d2):
+        n1 = int_type(self.value).value
+        d1 = uint_type(d1).value
+        d2 = uint_type(d2).value
+
+        d = dint_type(d1 + (d2 << int_bits)).value
+
+        q = d // n1
+        r = d % n1
+        return (I(r), I(q))
+
+    def m_star(self, n):
+        n1 = int_type(self.value).value
+        n2 = int_type(n).value
+
+        d = n1 * n2
+
+        d1 = d & int_mask
+        d2 = (d >> int_bits) & int_mask
+
+        return (I(d1), I(d2))
 
 def _v_in(v):
     if isinstance(v, I):

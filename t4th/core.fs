@@ -42,6 +42,14 @@
 : 2* 2 * ;
 : 2/ 2 / ;
 
+: S>D dup 0< if -1 else 0 then ;
+
+: */ */mod swap drop ;
+
+: negate invert 1+ ;
+
+: abs dup 0< if negate then ;
+
 : = ( a b -- flag ) - 0= ;
 : <> ( a b -- flag ) = invert ;
 : > ( a b -- flag ) \ flag = not (a <= b)
@@ -54,6 +62,7 @@
 
 : chars ;
 : cells ;
+: align ;
 : aligned ;
 
 : c@ @ ;
