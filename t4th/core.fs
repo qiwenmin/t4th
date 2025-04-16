@@ -47,8 +47,7 @@
 : > ( a b -- flag ) \ flag = not (a <= b)
   2dup < -rot = or invert ;
 
-: U< < ;
-: U> > ;
+: U> dup U< -rot = or invert ;
 
 : +! swap over @ + swap ! ;
 : allot dp +! ;

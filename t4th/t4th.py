@@ -173,6 +173,8 @@ class T4th:
             (T4th._Word('0='), self._word_zero_equ),
             (T4th._Word('0<'), self._word_zero_less),
 
+            (T4th._Word('U<'), self._word_u_less),
+
             (T4th._Word('COMPARE'), self._word_compare),
 
             (T4th._Word('DOCOL', flag=NI), self._word_docol),
@@ -438,6 +440,10 @@ class T4th:
         self._check_stack(1)
         self._data_stack.append(-1 if self._data_stack.pop() < 0 else 0)
 
+    def _word_u_less(self):
+        self._check_stack(2)
+        self._data_stack.append(-1 if tn.i2u(self._data_stack.pop()) > tn.i2u(self._data_stack.pop()) else 0)
+
     def _word_compare(self):
         self._check_stack(4)
 
@@ -691,10 +697,17 @@ class T4th:
             self._check_stack(1)
 
             step = self._data_stack.pop()
+            old_index = index
             index += step
             index = tn.I(index).value
 
-            if (step > 0 and index < limit) or (step < 0 and index >= limit) or (step == 0):
+            # 判断index是否跨越limit
+            # step大于零时，跨越指的是：old_index < limit <= index
+            # step小于零时，跨越指的是：old_index >= limit > index
+            # step等于零，就判断limit和index是否相当吧
+            if not ((step > 0 and old_index < limit and limit <= index) or
+                (step < 0 and old_index >= limit and limit > index) or
+                (step == 0 and limit == index)):
                 self._return_stack[-1] = index
                 self._pc = self._memory[self._pc]
             else:
@@ -705,13 +718,16 @@ class T4th:
 
     def _word_leave(self):
         self._check_return_stack(3)
-        self._return_stack[-1] = self._return_stack[-2]
+        self._return_stack.pop()
+        self._return_stack.pop()
+        leave_addr = self._return_stack.pop()
+        self._pc = leave_addr
 
     def _word_unloop(self):
         self._check_return_stack(3)
         self._return_stack.pop()
         self._return_stack.pop()
-        self._pc = self._return_stack.pop()
+        self._return_stack.pop()
 
     def _word_i(self):
         self._check_return_stack(3)

@@ -264,7 +264,7 @@ T{ : pb1 CR ." You should see 2345: "." 2345"; pb1 -> }T
 
 \ TODO: F.6.1.0240 /MOD
 
-\ F.6.1.02500 <
+\ F.6.1.0250 0<
 
 T{       0 0< -> <FALSE> }T
 T{      -1 0< -> <TRUE>  }T
@@ -663,11 +663,6 @@ T{ 1 GD5 -> 123 }T
 T{ 5 GD5 -> 123 }T
 T{ 6 GD5 -> 234 }T
 
-\ F.6.1.0070 '
-
-T{ : GT1 123 ;   ->     }T
-T{ ' GT1 EXECUTE -> 123 }T
-
 \ F.6.1.2510 [']
 
 T{ : GT2 ['] GT1 ; IMMEDIATE -> }T
@@ -684,6 +679,351 @@ T{ : GD1 DO I LOOP ; -> }T
 T{          4        1 GD1 ->  1 2 3   }T
 T{          2       -1 GD1 -> -1 0 1   }T
 T{ MID-UINT+1 MID-UINT GD1 -> MID-UINT }T
+
+\ TODO: F.6.1.1805 LSHIFT
+
+\ TODO: F.6.1.1810 M*
+
+\ F.6.1.1870 MAX
+
+T{       0       1 MAX ->       1 }T
+T{       1       2 MAX ->       2 }T
+T{      -1       0 MAX ->       0 }T
+T{      -1       1 MAX ->       1 }T
+T{ MIN-INT       0 MAX ->       0 }T
+T{ MIN-INT MAX-INT MAX -> MAX-INT }T
+T{       0 MAX-INT MAX -> MAX-INT }T
+T{       0       0 MAX ->       0 }T
+T{       1       1 MAX ->       1 }T
+T{       1       0 MAX ->       1 }T
+T{       2       1 MAX ->       2 }T
+T{       0      -1 MAX ->       0 }T
+T{       1      -1 MAX ->       1 }T
+T{       0 MIN-INT MAX ->       0 }T
+T{ MAX-INT MIN-INT MAX -> MAX-INT }T
+T{ MAX-INT       0 MAX -> MAX-INT }T
+
+\ F.6.1.1880 MIN
+
+T{       0       1 MIN ->       0 }T
+T{       1       2 MIN ->       1 }T
+T{      -1       0 MIN ->      -1 }T
+T{      -1       1 MIN ->      -1 }T
+T{ MIN-INT       0 MIN -> MIN-INT }T
+T{ MIN-INT MAX-INT MIN -> MIN-INT }T
+T{       0 MAX-INT MIN ->       0 }T
+T{       0       0 MIN ->       0 }T
+T{       1       1 MIN ->       1 }T
+T{       1       0 MIN ->       0 }T
+T{       2       1 MIN ->       1 }T
+T{       0      -1 MIN ->      -1 }T
+T{       1      -1 MIN ->      -1 }T
+T{       0 MIN-INT MIN -> MIN-INT }T
+T{ MAX-INT MIN-INT MIN -> MIN-INT }T
+T{ MAX-INT       0 MIN ->       0 }T
+
+\ TODO: F.6.1.1890 MOD
+
+\ TODO: F.6.1.1900 MOVE
+
+\ TODO: F.6.1.1910 NEGATE
+
+\ F.6.1.1980 OR
+
+T{ 0S 0S OR -> 0S }T
+T{ 0S 1S OR -> 1S }T
+T{ 1S 0S OR -> 1S }T
+T{ 1S 1S OR -> 1S }T
+
+\ F.6.1.1990 OVER
+
+T{ 1 2 OVER -> 1 2 1 }T
+
+\ F.6.1.2033 POSTPONE
+
+T{ : GT4 POSTPONE GT1 ; IMMEDIATE -> }T
+T{ : GT5 GT4 ; -> }T
+T{ GT5 -> 123 }T
+T{ : GT6 345 ; IMMEDIATE -> }T
+T{ : GT7 POSTPONE GT6 ; -> }T
+T{ GT7 -> 345 }T
+
+\ F.6.1.2060 R>
+
+\ F.6.1.2070 R@
+
+\ TODO: F.6.1.2120 RECURSE
+
+\ F.6.1.2140 REPEAT
+
+\ F.6.1.2160 ROT
+
+T{ 1 2 3 ROT -> 2 3 1 }T
+
+\ F.6.1.2162 RSHIFT
+
+T{    1 0 RSHIFT -> 1 }T
+T{    1 1 RSHIFT -> 0 }T
+T{    2 1 RSHIFT -> 1 }T
+T{    4 2 RSHIFT -> 1 }T
+T{ 8000 F RSHIFT -> 1 }T                \ Biggest
+T{  MSB 1 RSHIFT MSB AND ->   0 }T    \ RSHIFT zero fills MSBs
+T{  MSB 1 RSHIFT     2*  -> MSB }T
+
+\ F.6.1.2165 S"
+
+T{ : GC4 S" XY" ; ->   }T
+T{ GC4 SWAP DROP  -> 2 }T
+T{ GC4 DROP DUP C@ SWAP CHAR+ C@ -> 58 59 }T
+: GC5 S" A String"2DROP ; \ There is no space between the " and 2DROP
+T{ GC5 -> }T
+
+\ TODO: F.6.1.2170S>D
+
+\ TODO: F.6.1.2210 SIGN
+
+\ TODO: F.6.1.2214 SM/REM
+
+\ TODO: F.6.1.2216 SOURCE
+
+\ F.6.1.2220 SPACE
+
+\ F.6.1.2230 SPACES
+
+\ F.6.1.2250 STATE
+
+T{ : GT8 STATE @ ; IMMEDIATE -> }T
+T{ GT8 -> 0 }T
+T{ : GT9 GT8 LITERAL ; -> }T
+T{ GT9 0= -> <FALSE> }T
+
+\ F.6.1.2260 SWAP
+
+T{ 1 2 SWAP -> 2 1 }T
+
+\ F.6.1.2270 THEN
+
+\ F.6.1.2310 TYPE
+
+\ F.6.1.2320 U.
+
+\ F.6.1.2340U<
+T{        0        1 U< -> <TRUE>  }T
+T{        1        2 U< -> <TRUE>  }T
+T{        0 MID-UINT U< -> <TRUE>  }T
+T{        0 MAX-UINT U< -> <TRUE>  }T
+T{ MID-UINT MAX-UINT U< -> <TRUE>  }T
+T{        0        0 U< -> <FALSE> }T
+T{        1        1 U< -> <FALSE> }T
+T{        1        0 U< -> <FALSE> }T
+T{        2        1 U< -> <FALSE> }T
+T{ MID-UINT        0 U< -> <FALSE> }T
+T{ MAX-UINT        0 U< -> <FALSE> }T
+T{ MAX-UINT MID-UINT U< -> <FALSE> }T
+
+\ TODO: F.6.1.2360 UM*
+
+\ TODO: F.6.1.2370 UM/MOD
+
+\ F.6.1.2380 UNLOOP
+
+T{ : GD6 ( PAT: {0 0},{0 0}{1 0}{1 1},{0 0}{1 0}{1 1}{2 0}{2 1}{2 2} )
+      0 SWAP 0 DO
+         I 1+ 0 DO
+           I J + 3 = IF I UNLOOP I UNLOOP EXIT THEN 1+
+         LOOP
+      LOOP ; -> }T
+T{ 1 GD6 -> 1 }T
+T{ 2 GD6 -> 3 }T
+T{ 3 GD6 -> 4 1 2 }T
+
+\ F.6.1.2390 UNTIL
+
+T{ : GI4 BEGIN DUP 1+ DUP 5 > UNTIL ; -> }T
+T{ 3 GI4 -> 3 4 5 6 }T
+T{ 5 GI4 -> 5 6 }T
+T{ 6 GI4 -> 6 7 }T
+
+\ F.6.1.2410 VARIABLE
+
+T{ VARIABLE V1 ->     }T
+T{    123 V1 ! ->     }T
+T{        V1 @ -> 123 }T
+
+\ F.6.1.2430 WHILE
+
+T{ : GI3 BEGIN DUP 5 < WHILE DUP 1+ REPEAT ; -> }T
+T{ 0 GI3 -> 0 1 2 3 4 5 }T
+T{ 4 GI3 -> 4 5 }T
+T{ 5 GI3 -> 5 }T
+T{ 6 GI3 -> 6 }T
+T{ : GI5 BEGIN DUP 2 > WHILE
+      DUP 5 < WHILE DUP 1+ REPEAT
+      123 ELSE 345 THEN ; -> }T
+T{ 1 GI5 -> 1 345 }T
+T{ 2 GI5 -> 2 345 }T
+T{ 3 GI5 -> 3 4 5 123 }T
+T{ 4 GI5 -> 4 5 123 }T
+T{ 5 GI5 -> 5 123 }T
+
+\ TODO: F.6.1.2450 WORD
+
+\ F.6.1.2490 XOR
+
+T{ 0S 0S XOR -> 0S }T
+T{ 0S 1S XOR -> 1S }T
+T{ 1S 0S XOR -> 1S }T
+T{ 1S 1S XOR -> 0S }T
+
+\ F.6.1.2520 [CHAR]
+
+T{ : GC1 [CHAR] X     ; -> }T
+T{ : GC2 [CHAR] HELLO ; -> }T
+T{ GC1 -> 58 }T
+T{ GC2 -> 48 }T
+
+\ F.6.1.2500 [
+
+T{ : GC3 [ GC1 ] LITERAL ; -> }T
+T{ GC3 -> 58 }T
+
+\ F.6.1.2510 [']
+
+T{ : GT2 ['] GT1 ; IMMEDIATE -> }T
+T{ GT2 EXECUTE -> 123 }T
+
+\ TODO: F.6.1.2540 ]
+
+\ TODO: F.6.2.0455 :NONAME
+
+\ F.6.2.0620 ?DO
+
+DECIMAL
+: qd ?DO I LOOP ;
+T{   789   789 qd -> }T
+T{ -9876 -9876 qd -> }T
+T{     5     0 qd -> 0 1 2 3 4 }T
+
+: qd1 ?DO I 10 +LOOP ;
+T{ 50 1 qd1 -> 1 11 21 31 41 }T
+T{ 50 0 qd1 -> 0 10 20 30 40 }T
+
+: qd2 ?DO I 3 > IF LEAVE ELSE I THEN LOOP ;
+T{ 5 -1 qd2 -> -1 0 1 2 3 }T
+
+: qd3 ?DO I 1 +LOOP ;
+T{ 4  4 qd3 -> }T
+T{ 4  1 qd3 ->  1 2 3 }T
+T{ 2 -1 qd3 -> -1 0 1 }T
+
+: qd4 ?DO I -1 +LOOP ;
+T{  4 4 qd4 -> }T
+T{  1 4 qd4 -> 4 3 2  1 }T
+T{ -1 2 qd4 -> 2 1 0 -1 }T
+
+: qd5 ?DO I -10 +LOOP ;
+T{   1 50 qd5 -> 50 40 30 20 10   }T
+T{   0 50 qd5 -> 50 40 30 20 10 0 }T
+T{ -25 10 qd5 -> 10 0 -10 -20     }T
+
+VARIABLE qditerations
+VARIABLE qdincrement
+
+: qd6 ( limit start increment -- )    qdincrement !
+   0 qditerations !
+   ?DO
+     1 qditerations +!
+     I
+     qditerations @ 6 = IF LEAVE THEN
+     qdincrement @
+   +LOOP qditerations @
+;
+
+T{  4  4 -1 qd6 ->                   0  }T
+T{  1  4 -1 qd6 ->  4  3  2  1       4  }T
+T{  4  1 -1 qd6 ->  1  0 -1 -2 -3 -4 6  }T
+T{  4  1  0 qd6 ->  1  1  1  1  1  1 6  }T
+T{  0  0  0 qd6 ->                   0  }T
+T{  1  4  0 qd6 ->  4  4  4  4  4  4 6  }T
+T{  1  4  1 qd6 ->  4  5  6  7  8  9 6  }T
+T{  4  1  1 qd6 ->  1  2  3          3  }T
+T{  4  4  1 qd6 ->                   0  }T
+T{  2 -1 -1 qd6 -> -1 -2 -3 -4 -5 -6 6  }T
+T{ -1  2 -1 qd6 ->  2  1  0 -1       4  }T
+T{  2 -1  0 qd6 -> -1 -1 -1 -1 -1 -1 6  }T
+T{ -1  2  0 qd6 ->  2  2  2  2  2  2 6  }T
+T{ -1  2  1 qd6 ->  2  3  4  5  6  7 6  }T
+T{  2 -1  1 qd6 -> -1  0  1          3  }T
+
+hex
+
+\ TODO: F.6.2.0698 ACTION-OF
+
+\ TODO: F.6.2.0825 BUFFER:
+
+\ TODO: F.6.2.0855 C"
+
+\ TODO: F.6.2.0873 CASE
+
+\ TODO: F.6.2.0945 COMPILE,
+
+\ TODO: F.6.2.1173 DEFER
+
+\ TODO: F.6.2.1175 DEFER!
+
+\ TODO: F.6.2.1177 DEFER@
+
+\ F.6.2.1342 ENDCASE
+
+\ F.6.2.1343 ENDOF
+
+\ F.6.2.1485 FALSE
+
+T{ FALSE -> 0 }T
+T{ FALSE -> <FALSE> }T
+
+\ F.6.2.1660 HEX
+
+\ TODO: F.6.2.1675 HOLDS
+
+\ TODO: F.6.2.1725 IS
+
+\ TODO: F.6.2.1950 OF
+
+\ F.6.2.2020 PARSE-NAME
+
+T{ PARSE-NAME abcd S" abcd" S= -> <TRUE> }T
+T{ PARSE-NAME   abcde   S" abcde" S= -> <TRUE> }T
+\ test empty parse area
+T{ PARSE-NAME
+   NIP -> 0 }T    \ empty line
+T{ PARSE-NAME
+   NIP -> 0 }T    \ line with white space
+
+T{ : parse-name-test ( "name1" "name2" -- n )
+   PARSE-NAME PARSE-NAME S= ; -> }T
+
+T{ parse-name-test abcd abcd -> <TRUE> }T
+T{ parse-name-test  abcd   abcd   -> <TRUE> }T
+T{ parse-name-test abcde abcdf -> <FALSE> }T
+T{ parse-name-test abcdf abcde -> <FALSE> }T
+T{ parse-name-test abcde abcde
+    -> <TRUE> }T
+T{ parse-name-test abcde abcde
+    -> <TRUE> }T    \ line with white space
+
+\ TODO: F.6.2.2182 SAVE-INPUT
+
+\ TODO: F.6.2.2295 TO
+
+\ F.6.2.2298 TRUE
+
+T{ TRUE -> <TRUE> }T
+T{ TRUE -> 0 INVERT }T
+
+\ TODO: F.6.2.2405 VALUE
+
+\ TODO: F.6.2.2530 [COMPILE]
 
 
 \ Finished
