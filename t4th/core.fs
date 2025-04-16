@@ -96,6 +96,8 @@ $20 constant bl
     postpone literal
 ; immediate
 
+: count dup @ swap 1+ swap ;
+
 : source tib dup 1+ swap @ ;
 
 : s"
