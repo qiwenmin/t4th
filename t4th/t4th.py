@@ -191,6 +191,7 @@ class T4th:
 
             (T4th._Word('DOCOL', flag=NI), self._word_docol),
             (T4th._Word(':'), self._word_define),
+            (T4th._Word(':NONAME'), self._word_colon_noname),
             (T4th._Word(';', flag=IM), self._word_end_def),
             (T4th._Word('EXIT', flag=NI), self._word_exit),
 
@@ -571,6 +572,13 @@ class T4th:
         self._add_word(w)
         self._memory_append(self._memory[docol.ptr])
 
+        self._set_var_value('STATE', -1)
+
+    def _word_colon_noname(self):
+        docol = self._find_word('DOCOL')
+        xt = self._here()
+        self._memory_append(self._memory[docol.ptr])
+        self._data_stack.append(xt)
         self._set_var_value('STATE', -1)
 
     def _word_end_def(self):

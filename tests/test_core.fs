@@ -1212,7 +1212,14 @@ T{ GT2 EXECUTE -> 123 }T
 
 \ F.6.1.2540 ]
 
-\ TODO: F.6.2.0455 :NONAME
+\ F.6.2.0455 :NONAME
+
+VARIABLE nn1
+VARIABLE nn2
+T{ :NONAME 1234 ; nn1 ! -> }T
+T{ :NONAME 9876 ; nn2 ! -> }T
+T{ nn1 @ EXECUTE -> 1234 }T
+T{ nn2 @ EXECUTE -> 9876 }T
 
 \ F.6.2.0620 ?DO
 
