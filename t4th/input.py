@@ -50,7 +50,7 @@ def _move_cursor_right(cursor_pos, display_widths, out_stream, result) -> int:
         cursor_pos += 1
     return cursor_pos
 
-def get_input_line(prompt: str = '', stream=None) -> Optional[str]:
+def get_input_line(prompt: str = '', stream=None, max_length: int = -1) -> Optional[str]:
     if stream is None:
         stream = sys.stdin
 
@@ -65,6 +65,10 @@ def get_input_line(prompt: str = '', stream=None) -> Optional[str]:
         line = stream.readline()
         if not line:
             return None
+
+        if max_length >= 0 and len(line) > max_length:
+            print(line)
+            line = line[:max_length]
         return line.rstrip()
 
     print(prompt, end='', flush=True, file=_out)
@@ -113,6 +117,9 @@ def get_input_line(prompt: str = '', stream=None) -> Optional[str]:
             width = wcwidth(ch)
             if width <= 0:
                 continue
+            if max_length >= 0 and len(result) >= max_length:
+                continue
+
             result = result[:cursor_pos] + ch + result[cursor_pos:]
             display_widths.insert(cursor_pos, width)
             print(ch + result[cursor_pos+1:], end='', flush=True, file=_out)

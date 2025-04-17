@@ -139,6 +139,8 @@ $20 constant bl
   DUP >R - SWAP R> CHARS + SWAP
 ;
 
+: FILL -ROT 0 ?DO 2DUP C! 1+ LOOP 2DROP ;
+
 \ PARSE-NAME Implementation (from Forth-Standard.org)
 : isspace? ( c -- f )
    BL 1+ U< ;

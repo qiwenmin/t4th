@@ -226,6 +226,7 @@ class T4th:
 
             (T4th._Word('KEY'), self._word_key),
 
+            (T4th._Word('ACCEPT'), self._word_accept),
             (T4th._Word('REFILL'), self._word_refill),
             (T4th._Word('PARSE'), self._word_parse),
             (T4th._Word('TYPE'), self._word_type),
@@ -826,6 +827,23 @@ class T4th:
             if key == '\x03': # Ctrl-C
                 raise KeyboardInterrupt()
             self._data_stack.append(ord(key))
+
+    def _word_accept(self):
+        self._check_stack(2)
+        n1 = self._data_stack.pop()
+        addr = self._data_stack.pop()
+
+        _input_buffer = get_input_line(prompt='', stream=self._in_stream, max_length=n1)
+
+        n2 = 0
+        if _input_buffer is not None:
+            n2 = len(_input_buffer)
+
+        for i in range(n2):
+            self._memory[addr + i] = ord(_input_buffer[i])
+
+        self._data_stack.append(n2)
+
 
     def _word_refill(self):
         _input_buffer = get_input_line(prompt=self._prompt, stream=self._in_stream)
