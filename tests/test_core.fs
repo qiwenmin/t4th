@@ -1201,7 +1201,13 @@ T{ 3 GI5 -> 3 4 5 123 }T
 T{ 4 GI5 -> 4 5 123 }T
 T{ 5 GI5 -> 5 123 }T
 
-\ TODO: F.6.1.2450 WORD
+\ F.6.1.2450 WORD
+
+: GS3 WORD COUNT SWAP C@ ;
+T{ BL GS3 HELLO -> 5 CHAR H }T
+T{ CHAR " GS3 GOODBYE" -> 7 CHAR G }T
+T{ BL GS3
+   DROP -> 0 }T \ Blank lines return zero-length strings
 
 \ F.6.1.2490 XOR
 

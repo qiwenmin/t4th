@@ -235,6 +235,7 @@ class T4th:
             (T4th._Word('ACCEPT'), self._word_accept),
             (T4th._Word('REFILL'), self._word_refill),
             (T4th._Word('PARSE'), self._word_parse),
+            (T4th._Word('WORD'), self._word_word),
             (T4th._Word('TYPE'), self._word_type),
         ]
 
@@ -916,6 +917,28 @@ class T4th:
         self._data_stack.append(T4th.MemAddress.IN_BUFFER.value + 1 + in_begin)
         self._data_stack.append(u)
 
+    def _word_word(self):
+        self._check_stack(1)
+
+        c = chr(self._data_stack.pop())
+        # 先跳过c
+        self._skip_chars(c)
+
+        # 然后找word
+        in_begin = self._get_var_value('TO_IN')
+        if self._get_until_char(c):
+            u = self._get_var_value('TO_IN') - in_begin - 1
+        else:
+            u = self._get_var_value('TO_IN') - in_begin
+
+        # 复制到PAD中部
+        c_addr = T4th.MemAddress.PAD_BUFFER.value + (T4th.MemAddress.PAD_BUFFER_LEN.value // 2)
+        self._memory[c_addr] = u
+        for i in range(u):
+            self._memory[c_addr + 1 + i] = self._memory[T4th.MemAddress.IN_BUFFER.value + 1 + in_begin + i]
+
+        self._data_stack.append(c_addr)
+
     def _word_type(self):
         self._check_stack(2)
 
@@ -963,6 +986,14 @@ class T4th:
         return s
 
     # IO函数
+
+    def _skip_chars(self, c):
+        while self._get_var_value('TO_IN') < self._memory[T4th.MemAddress.IN_BUFFER.value]:
+            ch_ord = self._memory[T4th.MemAddress.IN_BUFFER.value + 1 + self._get_var_value('TO_IN')]
+            if chr(ch_ord) != c:
+                break
+
+            self._inc_var('TO_IN')
 
     def _get_until_char(self, c) -> bool:
         while self._get_var_value('TO_IN') < self._memory[T4th.MemAddress.IN_BUFFER.value]:
