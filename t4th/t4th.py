@@ -120,6 +120,7 @@ class T4th:
             (T4th._Word('.VM'), self._word_dot_vm),
 
             (T4th._Word('BYE'), self._word_bye),
+            (T4th._Word('ABORT'), self._word_abort),
 
             self._VAR_WORD('DP'),
             self._VAR_WORD('BASE'),
@@ -264,6 +265,9 @@ class T4th:
     def _word_bye(self):
         print()
         self._quit = True
+
+    def _word_abort(self):
+        raise RuntimeError('Aborted')
 
     def _word_environment_query(self):
         self._check_stack(2)

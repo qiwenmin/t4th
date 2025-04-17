@@ -253,5 +253,23 @@ variable hld
   postpone else  \ 添加跳转指令跳过后续分支
 ; immediate
 
+: DEFER ( "name" -- )
+   CREATE ['] ABORT ,
+DOES> ( ... -- ... )
+   @ EXECUTE ;
+
+: DEFER! ( xt2 xt1 -- )
+   >BODY ! ;
+
+: DEFER@ ( xt1 -- xt2 )
+   >BODY @ ;
+
+: IS
+   STATE @ IF
+     POSTPONE ['] POSTPONE DEFER!
+   ELSE
+     ' DEFER!
+   THEN ; IMMEDIATE
+
 \ 这个词之后的，才能forget。
 create user-word-begin

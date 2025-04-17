@@ -1495,11 +1495,33 @@ T{ : q dup+ COMPILE, ; -> }T
 T{ : as [ q ] ; -> }T
 T{ 123 as -> 246 }T
 
-\ TODO: F.6.2.1173 DEFER
+\ F.6.2.1173 DEFER
 
-\ TODO: F.6.2.1175 DEFER!
+T{ DEFER defer2 ->   }T
+T{ ' * ' defer2 DEFER! -> }T
+T{   2 3 defer2 -> 6 }T
+T{ ' + IS defer2 ->   }T
+T{    1 2 defer2 -> 3 }T
 
-\ TODO: F.6.2.1177 DEFER@
+\ F.6.2.1175 DEFER!
+
+T{ DEFER defer3 -> }T
+T{ ' * ' defer3 DEFER! -> }T
+T{ 2 3 defer3 -> 6 }T
+
+T{ ' + ' defer3 DEFER! -> }T
+T{ 1 2 defer3 -> 3 }T
+
+\ F.6.2.1177 DEFER@
+
+T{ DEFER defer4 -> }T
+T{ ' * ' defer4 DEFER! -> }T
+T{ 2 3 defer4 -> 6 }T
+T{ ' defer4 DEFER@ -> ' * }T
+
+T{ ' + IS defer4 -> }T
+T{ 1 2 defer4 -> 3 }T
+T{ ' defer4 DEFER@ -> ' + }T
 
 \ F.6.2.1342 ENDCASE
 
@@ -1516,7 +1538,15 @@ T{ FALSE -> <FALSE> }T
 
 T{ 0. <# S" Test" HOLDS #> S" Test" COMPARE -> 0 }T
 
-\ TODO: F.6.2.1725 IS
+\ F.6.2.1725 IS
+
+T{ DEFER defer5 -> }T
+T{ : is-defer5 IS defer5 ; -> }T
+T{ ' * IS defer5 -> }T
+T{ 2 3 defer5 -> 6 }T
+
+T{ ' + is-defer5 -> }T
+T{ 1 2 defer5 -> 3 }T
 
 \ F.6.2.1950 OF
 
