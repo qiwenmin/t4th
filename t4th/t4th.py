@@ -366,8 +366,13 @@ class T4th:
         addr2 = self._data_stack.pop()
         addr1 = self._data_stack.pop()
 
-        for i in range(u):
-            self._memory[addr2 + i] = self._memory[addr1 + i]
+        if addr1 >= addr2:
+            for i in range(u):
+                self._memory[addr2 + i] = self._memory[addr1 + i]
+        else:
+            # 要防止覆盖，从后向前复制
+            for i in range(u-1, -1, -1):
+                self._memory[addr2 + i] = self._memory[addr1 + i]
 
     def _word_to_r(self):
         self._check_stack(1)

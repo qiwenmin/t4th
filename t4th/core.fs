@@ -69,7 +69,7 @@
 : c, , ;
 : c! ! ;
 
-: char+ 1+ ;
+: char+ 1 chars + ;
 : cell+ 1 cells + ;
 
 : 2@ DUP CELL+ @ SWAP @ ;
