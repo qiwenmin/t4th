@@ -304,5 +304,17 @@ DOES> ( ... -- ... )
      ' DEFER@
    THEN ; IMMEDIATE
 
+: VALUE ( x "name" -- )
+  CREATE , DOES> @ ;
+
+: TO ( x "name" -- )
+  state @
+  if
+    ' >body postpone literal postpone !
+  else
+    ' >body !
+  then
+; immediate
+
 \ 这个词之后的，才能forget。
 create user-word-begin
