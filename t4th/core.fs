@@ -244,5 +244,12 @@ variable hld
   CREATE ALLOT
 ;
 
+: case  0 ; immediate  \ 初始化计数器
+: of    postpone over postpone = postpone if postpone drop ; immediate
+: endcase postpone drop begin ?dup while postpone then repeat ; immediate
+: endof
+  postpone else  \ 添加跳转指令跳过后续分支
+; immediate
+
 \ 这个词之后的，才能forget。
 create user-word-begin

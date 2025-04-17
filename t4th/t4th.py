@@ -194,6 +194,7 @@ class T4th:
             (T4th._Word(':NONAME'), self._word_colon_noname),
             (T4th._Word(';', flag=IM), self._word_end_def),
             (T4th._Word('EXIT', flag=NI), self._word_exit),
+            (T4th._Word('RECURSE', flag=IM|NI), self._word_recurse),
 
             (T4th._Word('IMMEDIATE', flag=IM), self._word_immediate),
 
@@ -578,6 +579,8 @@ class T4th:
         self._add_word(w)
         self._memory_append(self._memory[docol.ptr])
 
+        self._return_stack.append(w.ptr)
+
         self._set_var_value('STATE', -1)
 
     def _word_colon_noname(self):
@@ -585,9 +588,13 @@ class T4th:
         xt = self._here()
         self._memory_append(self._memory[docol.ptr])
         self._data_stack.append(xt)
+        self._return_stack.append(xt)
         self._set_var_value('STATE', -1)
 
     def _word_end_def(self):
+        self._check_return_stack(1)
+        self._return_stack.pop()
+
         self._memory_append(self._find_word('EXIT').ptr)
         self._set_var_value('STATE', 0)
 
@@ -595,6 +602,11 @@ class T4th:
         self._check_return_stack(1)
 
         self._pc = self._return_stack.pop()
+
+    def _word_recurse(self):
+        self._check_return_stack(1)
+
+        self._memory_append(self._return_stack[-1])
 
     def _word_immediate(self):
         if self._latest_word_ptr > 0:
