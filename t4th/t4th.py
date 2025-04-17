@@ -1051,6 +1051,7 @@ class T4th:
 
         else:
             try:
+                d = False
                 if word_name[0] == "'": # 字符
                     if len(word_name) != 3 or word_name[2] != "'":
                         raise ValueError(f'Invalid character "{word_name}"')
@@ -1076,15 +1077,30 @@ class T4th:
 
                     if len(w) > 0:
                         if w[-1] == '.':
+                            d = True
                             w = w[:-1]
 
                     value = int(w, b) * s
 
                 if self._get_var_value('STATE') != 0:
-                    self._memory_append(self._find_word('(LITERAL)').ptr)
-                    self._memory_append(value)
+                    if d:
+                        (n1, n2) = tn.i2d(value)
+                        self._data_stack.append(n1)
+                        self._data_stack.append(n2)
+                        self._memory_append(self._find_word('(LITERAL)').ptr)
+                        self._memory_append(n1)
+                        self._memory_append(self._find_word('(LITERAL)').ptr)
+                        self._memory_append(n2)
+                    else:
+                        self._memory_append(self._find_word('(LITERAL)').ptr)
+                        self._memory_append(value)
                 else:
-                    self._data_stack.append(value)
+                    if d:
+                        (n1, n2) = tn.i2d(value)
+                        self._data_stack.append(n1)
+                        self._data_stack.append(n2)
+                    else:
+                        self._data_stack.append(value)
             except ValueError:
                 raise ValueError(f'Unknown word "{word_name}"')
 

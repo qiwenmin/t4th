@@ -28,6 +28,10 @@ def int_to_base(n: int) -> str:
 def i2u(n: int):
     return uint_type(n).value
 
+def i2d(n: int):
+    d = dint_type(n).value
+    return (d & int_mask, d >> int_bits)
+
 class I(int_type):
     def __repr__(self):
         return f'{int_to_base(self.value)}'
