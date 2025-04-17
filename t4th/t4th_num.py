@@ -10,13 +10,14 @@ duint_type = c_uint64
 int_bits = sizeof(int_type) * 8
 int_mask = (1 << int_bits) - 1
 
+digits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
 def int_to_base(n: int) -> str:
     if not (2 <= base() <= 36):
         raise ValueError("Base must be between 2 and 36")
     if n == 0:
         return '0'
 
-    digits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     is_negative = n < 0
     n = abs(n)
     res = ""
@@ -25,12 +26,24 @@ def int_to_base(n: int) -> str:
         n //= base()
     return '-' + res if is_negative else res
 
+def ch_to_int(ch: str) -> int:
+    if not (2 <= base() <= 36):
+        raise ValueError("Base must be between 2 and 36")
+
+    allowed_chars = digits[:base()]
+    if ch not in allowed_chars:
+        return -1
+    return digits.index(ch)
+
 def i2u(n: int):
     return uint_type(n).value
 
 def i2d(n: int):
     d = dint_type(n).value
     return (d & int_mask, d >> int_bits)
+
+def ud2i(u1, u2):
+    return uint_type(u1).value + (uint_type(u2).value << int_bits)
 
 class I(int_type):
     def __repr__(self):

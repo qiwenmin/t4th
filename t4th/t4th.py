@@ -240,6 +240,8 @@ class T4th:
             (T4th._Word('PARSE'), self._word_parse),
             (T4th._Word('WORD'), self._word_word),
             (T4th._Word('TYPE'), self._word_type),
+
+            (T4th._Word('>NUMBER'), self._word_to_number),
         ]
 
         self._init_vm()
@@ -976,6 +978,32 @@ class T4th:
         for i in range(u):
             ch_ord = self._memory[addr + i]
             print(chr(ch_ord), end='', flush=True)
+
+    def _word_to_number(self):
+        self._check_stack(4)
+
+        n = self._data_stack.pop()
+        addr = self._data_stack.pop()
+        u2 = self._data_stack.pop()
+        u1 = self._data_stack.pop()
+
+        ud = tn.ud2i(u1, u2)
+
+        i = 0
+        while i < n:
+            ch = chr(self._memory[addr + i])
+            d = tn.ch_to_int(ch)
+            if d < 0:
+                break
+            ud = ud * self._base() + d
+            i += 1
+
+        (u1, u2) = tn.i2d(ud)
+        self._data_stack.append(u1)
+        self._data_stack.append(u2)
+        self._data_stack.append(addr + i)
+        self._data_stack.append(n - i)
+
 
     # 辅助函数
 
