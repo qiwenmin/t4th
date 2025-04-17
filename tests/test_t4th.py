@@ -157,6 +157,7 @@ class TestT4th(unittest.TestCase):
         self._run_scripts_result_contains("1 0 /mod .", output_contains)
         self._run_scripts_result_contains("1 1 0 fm/mod .", output_contains)
         self._run_scripts_result_contains("1 1 0 */mod .", output_contains)
+        self._run_scripts_result_contains("1 1 0 sm/rem .", output_contains)
 
     def test_compare(self):
         scripts = """
@@ -232,6 +233,11 @@ class TestT4th(unittest.TestCase):
     def test_compile_double_precision_number(self):
         scripts = ": test -3. ; .s"
         output_contains = r'<2> -3 -1  ok'
+        self._run_scripts_result_contains(scripts, output_contains)
+
+    def test_word_word_skip_chars(self):
+        scripts = "char - word -------foo bar- count type"
+        output_contains = r'foo bar'
         self._run_scripts_result_contains(scripts, output_contains)
 
 

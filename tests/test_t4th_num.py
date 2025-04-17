@@ -13,3 +13,8 @@ class TestT4thNum(unittest.TestCase):
         self.assertEqual(f'{i}', '42')
         t4n.base = lambda :16
         self.assertEqual(f'{i}', '2A')
+
+    def test_ch_to_int_fail(self):
+        t4n.base = lambda : 37
+        with self.assertRaises(ValueError):
+            t4n.ch_to_int('0')
