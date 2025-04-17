@@ -198,7 +198,7 @@ class T4th:
             (T4th._Word('EXIT', flag=NI), self._word_exit),
             (T4th._Word('RECURSE', flag=IM|NI), self._word_recurse),
 
-            (T4th._Word('IMMEDIATE', flag=IM), self._word_immediate),
+            (T4th._Word('IMMEDIATE'), self._word_immediate),
 
             (T4th._Word('POSTPONE', flag=IM|NI), self._word_postpone),
             (T4th._Word('[COMPILE]', flag=IM|NI), self._word_bracket_compile),
@@ -605,10 +605,11 @@ class T4th:
 
     def _word_colon_noname(self):
         docol = self._find_word('DOCOL')
-        xt = self._here()
+        w = T4th._Word(" noname", self._here() + 1, prev=self._latest_word_ptr) # " noname"包含空格，不可能被parse出来的word_name匹配上。
+        self._add_word(w)
         self._memory_append(self._memory[docol.ptr])
-        self._data_stack.append(xt)
-        self._return_stack.append(xt)
+        self._data_stack.append(w.ptr)
+        self._return_stack.append(w.ptr)
         self._set_var_value('STATE', -1)
 
     def _word_end_def(self):
