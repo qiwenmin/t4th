@@ -229,6 +229,11 @@ class TestT4th(unittest.TestCase):
         output_contains = r'Error: Unknown word "\'a-"'
         self._run_scripts_result_contains(scripts, output_contains)
 
+    def test_compile_double_precision_number(self):
+        scripts = ": test -3. ; .s"
+        output_contains = r'<2> -3 -1  ok'
+        self._run_scripts_result_contains(scripts, output_contains)
+
 
     def test_postpone(self):
         "F.6.1.2033"
@@ -469,12 +474,10 @@ class TestT4th(unittest.TestCase):
 
     def test_loop(self):
         "F.6.1.1800"
-        # TODO 测试不全
         scripts = """
             : GD1 DO I LOOP ; .S ==> <0>  ok
                      4        1 GD1 .S DROP DROP DROP ==> <3> 1 2 3  ok
                      2       -1 GD1 .S DROP DROP DROP ==> <3> -1 0 1  ok
-            \\ MID-UINT+1 MID-UINT GD1 -> MID-UINT ==>  ok
         """
 
         self._run_scripts(scripts)

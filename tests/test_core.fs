@@ -696,13 +696,21 @@ T{ : EQU CONSTANT ; -> }T
 T{ X123 EQU Y123 -> }T
 T{ Y123 -> 123 }T
 
-\ TODO: F.6.1.1550 FIND
+\ F.6.1.2510 [']
+
+T{ : GT2 ['] GT1 ; IMMEDIATE -> }T
+T{ GT2 EXECUTE -> 123 }T
+
+\ F.6.1.1550 FIND
 
 HERE 3 C, CHAR G C, CHAR T C, CHAR 1 C, CONSTANT GT1STRING
 HERE 3 C, CHAR G C, CHAR T C, CHAR 2 C, CONSTANT GT2STRING
-\ T{ GT1STRING FIND -> ' GT1 -1 }T
-\ T{ GT2STRING FIND -> ' GT2 1  }T
+T{ GT1STRING FIND -> ' GT1 -1 }T
+T{ GT2STRING FIND -> ' GT2 1  }T
 ( HOW TO SEARCH FOR NON-EXISTENT WORD? )
+\ my test for non-existent word `_#!?`:
+here 4 c, char _ c, char # c, char ! c, char ? c, constant nonexistentword
+T{ nonexistentword FIND -> nonexistentword 0 }T
 
 \ F.6.1.0980 COUNT
 
@@ -885,11 +893,6 @@ T{ : GD5 123 SWAP 0 DO
 T{ 1 GD5 -> 123 }T
 T{ 5 GD5 -> 123 }T
 T{ 6 GD5 -> 234 }T
-
-\ F.6.1.2510 [']
-
-T{ : GT2 ['] GT1 ; IMMEDIATE -> }T
-T{ GT2 EXECUTE -> 123 }T
 
 \ F.6.1.1780 LITERAL
 

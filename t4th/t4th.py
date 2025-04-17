@@ -86,7 +86,7 @@ class T4th:
             return None
         return self._memory[p]
 
-    def _find_word(self, word_name:str) -> Optional[_Word]:
+    def _find_word(self, word_name:str) -> _Word:
         word = self._find_word_or_none(word_name)
         if word is None:
             raise ValueError(f"Undefined word: `{word_name}`")
@@ -210,6 +210,7 @@ class T4th:
 
             (T4th._Word('\''), self._word_tick),
             (T4th._Word('EXECUTE'), self._word_execute),
+            (T4th._Word('FIND'), self._word_find),
 
             (T4th._Word('BRANCH', flag=NI), self._word_branch),
             (T4th._Word('0BRANCH', flag=NI), self._word_0branch),
@@ -645,6 +646,19 @@ class T4th:
         self._exec_pc = xt
         self._memory[xt]()
 
+    def _word_find(self):
+        self._check_stack(1)
+        c_addr = self._data_stack.pop()
+        word_name = self._copy_counted_str(c_addr)
+
+        w = self._find_word_or_none(word_name)
+        if w is None:
+            self._data_stack.append(c_addr)
+            self._data_stack.append(0)
+        else:
+            self._data_stack.append(w.ptr)
+            self._data_stack.append(1 if w.is_immediate() else -1)
+
     def _word_branch(self):
         self._pc = self._memory[self._pc]
 
@@ -912,6 +926,13 @@ class T4th:
         w = self._memory[p]
         self._memory[T4th.MemAddress.DP.value] = p
         self._latest_word_ptr = w.prev
+
+    def _copy_counted_str(self, c_addr:int) -> str:
+        n = self._memory[c_addr]
+        s = ''
+        for i in range(n):
+            s += chr(self._memory[c_addr + 1 + i])
+        return s
 
     # IO函数
 
