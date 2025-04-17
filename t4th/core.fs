@@ -242,5 +242,9 @@ variable hld
   here -rot dup -rot dup here swap allot swap move
 ;
 
+: BUFFER: ( u "<name>" -- ; -- addr )
+  CREATE ALLOT
+;
+
 \ 这个词之后的，才能forget。
 create user-word-begin

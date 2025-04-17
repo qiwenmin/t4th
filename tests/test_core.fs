@@ -1266,7 +1266,32 @@ hex
 
 \ TODO: F.6.2.0698 ACTION-OF
 
-\ TODO: F.6.2.0825 BUFFER:
+\ F.6.2.0825 BUFFER:
+
+DECIMAL
+T{ 127 CHARS BUFFER: TBUF1 -> }T
+T{ 127 CHARS BUFFER: TBUF2 -> }T
+\ Buffer is aligned
+T{ TBUF1 ALIGNED -> TBUF1 }T
+
+\ Buffers do not overlap
+T{ TBUF2 TBUF1 - ABS 127 CHARS < -> <FALSE> }T
+
+\ Buffer can be written to
+1 CHARS CONSTANT /CHAR
+: TFULL? ( c-addr n char -- flag )
+   TRUE 2SWAP CHARS OVER + SWAP ?DO
+     OVER I C@ = AND
+   /CHAR +LOOP NIP
+;
+
+T{ TBUF1 127 CHAR * FILL   ->        }T
+T{ TBUF1 127 CHAR * TFULL? -> <TRUE> }T
+
+T{ TBUF1 127 0 FILL   ->        }T
+T{ TBUF1 127 0 TFULL? -> <TRUE> }T
+
+hex
 
 \ TODO: F.6.2.0855 C"
 
