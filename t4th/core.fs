@@ -235,6 +235,8 @@ variable hld
   2drop pad-end hld @ - hld @ 1+ swap
 ;
 
+: sign 0< if [char] - hold then ;
+
 \ 将字符串复制到here开始的地方，返回新的地址和长度
 : s>here ( addr u - addr u )
   here -rot dup -rot dup here swap allot swap move

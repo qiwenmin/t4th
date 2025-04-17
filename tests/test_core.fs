@@ -1181,7 +1181,10 @@ T{      -2 S>D ->      -2 -1 }T
 T{ MIN-INT S>D -> MIN-INT -1 }T
 T{ MAX-INT S>D -> MAX-INT  0 }T
 
-\ TODO: F.6.1.2210 SIGN
+\ F.6.1.2210 SIGN
+
+: GP2 <# -1 SIGN 0 SIGN -1 SIGN 0 0 #> S" --" S= ;
+T{ GP2 -> <TRUE> }T
 
 \ F.6.1.2214 SM/REM
 
