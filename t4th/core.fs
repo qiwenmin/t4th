@@ -175,8 +175,6 @@ $20 constant bl
   then
 ; immediate
 
-: environment? 2drop 0 ;
-
 : [THEN] ( -- ) ; IMMEDIATE
 
 : [IF] ( flag -- )

@@ -790,6 +790,14 @@ T{ OUTPUT-TEST -> }T
 
 \ TODO: F.6.1.1345 ENVIRONMENT?
 
+\ should be the same for any query starting with X:
+\ T{ S" X:deferred" ENVIRONMENT? DUP 0= XOR INVERT -> <TRUE>  }T
+\ T{ S" X:notfound" ENVIRONMENT? DUP 0= XOR INVERT -> <FALSE> }T
+\ 上面的测试用例有问题，无论environment?返回是-1还是0，经过dup 0= xor invert后都是0。
+\ 改为下面的用例：
+T{ S" X:deferred" ENVIRONMENT? 0= INVERT -> <TRUE>  }T
+T{ S" X:notfound" ENVIRONMENT? 0= INVERT -> <FALSE> }T
+
 \ TODO: F.6.1.1360 EVALUATE
 
 \ F.6.1.1370 EXECUTE

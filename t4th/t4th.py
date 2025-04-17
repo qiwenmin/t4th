@@ -129,6 +129,8 @@ class T4th:
             self._VAR_WORD('PAD_BUFFER', 'PAD'),
             self._VAR_WORD('PAD_END', 'PAD-END'),
 
+            (T4th._Word('ENVIRONMENT?'), self._word_environment_query),
+
             (T4th._Word('WORDS'), self._word_words),
             (T4th._Word('FORGET'), self._word_forget),
 
@@ -253,6 +255,17 @@ class T4th:
     def _word_bye(self):
         print()
         self._quit = True
+
+    def _word_environment_query(self):
+        self._check_stack(2)
+        u = self._data_stack.pop()
+        c_addr = self._data_stack.pop()
+
+        env_name = self._copy_counted_str(c_addr, u)
+        if env_name == 'X:deferred':
+            self._data_stack.append(-1)
+        else:
+            self._data_stack.append(0)
 
     def _word_words(self):
         print()
@@ -927,11 +940,13 @@ class T4th:
         self._memory[T4th.MemAddress.DP.value] = p
         self._latest_word_ptr = w.prev
 
-    def _copy_counted_str(self, c_addr:int) -> str:
-        n = self._memory[c_addr]
+    def _copy_counted_str(self, c_addr:int, n:int = -1) -> str:
+        if n == -1:
+            n = self._memory[c_addr]
+            c_addr += 1
         s = ''
         for i in range(n):
-            s += chr(self._memory[c_addr + 1 + i])
+            s += chr(self._memory[c_addr + i])
         return s
 
     # IO函数
