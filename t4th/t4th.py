@@ -174,6 +174,8 @@ class T4th:
             (T4th._Word('FM/MOD'), self._word_fm_slash_mod),
             (T4th._Word('*/MOD'), self._word_star_slash_mod),
 
+            (T4th._Word('SM/REM'), self._word_sm_slash_rem),
+
             (T4th._Word('INVERT'), self._word_invert),
             (T4th._Word('AND'), self._word_and),
             (T4th._Word('OR'), self._word_or),
@@ -501,6 +503,20 @@ class T4th:
 
         self._data_stack.append(n4)
         self._data_stack.append(n5)
+
+    def _word_sm_slash_rem(self):
+        self._check_stack(3)
+        n1 = self._data_stack.pop()
+        d2 = self._data_stack.pop()
+        d1 = self._data_stack.pop()
+
+        if n1 == 0:
+            raise ValueError('Division by zero')
+
+        (r, q) = tn.I(n1).sm_rem(d1, d2)
+
+        self._data_stack.append(r)
+        self._data_stack.append(q)
 
     def _word_invert(self):
         self._check_stack(1)

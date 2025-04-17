@@ -86,6 +86,18 @@ class I(int_type):
         r = d % n1
         return (I(r), I(q))
 
+    def sm_rem(self, d1, d2):
+        n1 = int_type(self.value).value
+        d1 = int_type(d1).value
+        d2 = int_type(d2).value
+
+        d = dint_type((d1 & int_mask) + (d2 << int_bits)).value
+
+        q = int(d / n1)
+        r = d - q * n1
+
+        return (I(r), I(q))
+
     def m_star(self, n):
         n1 = int_type(self.value).value
         n2 = int_type(n).value
