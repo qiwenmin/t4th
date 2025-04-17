@@ -1425,7 +1425,19 @@ T{  2 -1  1 qd6 -> -1  0  1          3  }T
 
 hex
 
-\ TODO: F.6.2.0698 ACTION-OF
+\ F.6.2.0698 ACTION-OF
+
+T{ DEFER defer1 -> }T
+T{ : action-defer1 ACTION-OF defer1 ; -> }T
+T{ ' * ' defer1 DEFER! ->   }T
+T{          2 3 defer1 -> 6 }T
+T{ ACTION-OF defer1 -> ' * }T
+T{    action-defer1 -> ' * }T
+
+T{ ' + IS defer1 ->   }T
+T{    1 2 defer1 -> 3 }T
+T{ ACTION-OF defer1 -> ' + }T
+T{    action-defer1 -> ' + }T
 
 \ F.6.2.0825 BUFFER:
 

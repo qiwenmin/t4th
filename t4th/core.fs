@@ -271,5 +271,12 @@ DOES> ( ... -- ... )
      ' DEFER!
    THEN ; IMMEDIATE
 
+: ACTION-OF
+   STATE @ IF
+     POSTPONE ['] POSTPONE DEFER@
+   ELSE
+     ' DEFER@
+   THEN ; IMMEDIATE
+
 \ 这个词之后的，才能forget。
 create user-word-begin
