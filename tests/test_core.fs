@@ -1467,7 +1467,12 @@ T{ -2 1 cs2 ->  -99 }T
 T{ -2 2 cs2 -> -199 }T
 T{  0 2 cs2 ->  299 }T
 
-\ TODO: F.6.2.0945 COMPILE,
+\ F.6.2.0945 COMPILE,
+
+:NONAME DUP + ; CONSTANT dup+
+T{ : q dup+ COMPILE, ; -> }T
+T{ : as [ q ] ; -> }T
+T{ 123 as -> 246 }T
 
 \ TODO: F.6.2.1173 DEFER
 
@@ -1527,8 +1532,19 @@ T{ TRUE -> 0 INVERT }T
 
 \ TODO: F.6.2.2405 VALUE
 
-\ TODO: F.6.2.2530 [COMPILE]
+\ F.6.2.2530 [COMPILE]
 
+\ With default compilation semantics
+T{ : [c1] [COMPILE] DUP ; IMMEDIATE -> }T
+T{ 123 [c1] -> 123 123 }T
+\ With an immediate word
+T{ : [c2] [COMPILE] [c1] ; -> }T
+T{ 234 [c2] -> 234 234 }T
+\ With special compilation semantics
+T{ : [cif] [COMPILE] IF ; IMMEDIATE -> }T
+T{ : [c3]  [cif] 111 ELSE 222 THEN ; -> }T
+T{ -1 [c3] -> 111 }T
+T{  0 [c3] -> 222 }T
 
 \ Finished
 

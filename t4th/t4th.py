@@ -201,6 +201,8 @@ class T4th:
             (T4th._Word('IMMEDIATE', flag=IM), self._word_immediate),
 
             (T4th._Word('POSTPONE', flag=IM|NI), self._word_postpone),
+            (T4th._Word('[COMPILE]', flag=IM|NI), self._word_bracket_compile),
+            (T4th._Word('COMPILE,'), self._word_compile_comma),
 
             (T4th._Word('(CREATE)', flag=NI), self._word_create_p),
             (T4th._Word('CREATE'), self._word_create),
@@ -639,6 +641,15 @@ class T4th:
             self._memory_append(self._find_word('(LITERAL)').ptr)
             self._memory_append(w.ptr)
             self._memory_append(self._find_word(',').ptr)
+
+    def _word_bracket_compile(self):
+        word_name = self._get_next_word()
+        w = self._find_word(word_name)
+        self._memory_append(w.ptr)
+
+    def _word_compile_comma(self):
+        self._check_stack(1)
+        self._memory_append(self._data_stack.pop())
 
     def _word_create_p(self):
         self._data_stack.append(self._exec_pc + 1)
