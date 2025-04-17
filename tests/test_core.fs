@@ -1291,7 +1291,9 @@ T{ FALSE -> <FALSE> }T
 
 \ F.6.2.1660 HEX
 
-\ TODO: F.6.2.1675 HOLDS
+\ F.6.2.1675 HOLDS
+
+T{ 0. <# S" Test" HOLDS #> S" Test" COMPARE -> 0 }T
 
 \ TODO: F.6.2.1725 IS
 

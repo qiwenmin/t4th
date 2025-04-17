@@ -19,6 +19,7 @@ class T4th:
         PAD_BUFFER = IN_BUFFER + IN_BUFFER_LEN
         PAD_BUFFER_LEN = 256
 
+        PAD_END = PAD_BUFFER + PAD_BUFFER_LEN - 1
         EXEC_START = PAD_BUFFER + PAD_BUFFER_LEN
 
         DP = auto()
@@ -126,6 +127,7 @@ class T4th:
             self._VAR_WORD('TO_IN', '>IN'),
             self._VAR_WORD('IN_BUFFER', 'TIB'),
             self._VAR_WORD('PAD_BUFFER', 'PAD'),
+            self._VAR_WORD('PAD_END', 'PAD-END'),
 
             (T4th._Word('WORDS'), self._word_words),
             (T4th._Word('FORGET'), self._word_forget),

@@ -209,7 +209,7 @@ $20 constant bl
 
 variable hld
 
-: <# pad hld ! ;
+: <# pad-end hld ! ;
 
 : UD/MOD  ( ud u -- rem quot )
     >R 0 R@ UM/MOD -ROT R> UM/MOD ROT
@@ -219,6 +219,9 @@ variable hld
     hld @ C!  \ 存储字符到当前hld位置
     -1 hld +! \ hld指针前移（反向填充）
 ;
+
+: HOLDS ( addr u -- )
+   BEGIN DUP WHILE 1- 2DUP + C@ HOLD REPEAT 2DROP ;
 
 : #  ( ud1 -- ud2 )
     BASE @ UD/MOD ROT \ 除以基数得到余数（数字）和商
@@ -231,7 +234,7 @@ variable hld
 ;
 
 : #>  ( ud -- addr u )
-  2drop pad hld @ - hld @ 1+ swap
+  2drop pad-end hld @ - hld @ 1+ swap
 ;
 
 \ 将字符串复制到here开始的地方，返回新的地址和长度
