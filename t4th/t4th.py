@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from io import StringIO
 import os
 import sys
 import t4th.t4th_num as tn
@@ -121,6 +122,7 @@ class T4th:
 
             (T4th._Word('BYE'), self._word_bye),
             (T4th._Word('ABORT'), self._word_abort),
+            (T4th._Word('EVALUATE'), self._word_evaluate),
 
             self._VAR_WORD('DP'),
             self._VAR_WORD('BASE'),
@@ -268,6 +270,30 @@ class T4th:
 
     def _word_abort(self):
         raise RuntimeError('Aborted')
+
+    def _word_evaluate(self):
+        self._check_stack(2)
+        u = self._data_stack.pop()
+        c_addr = self._data_stack.pop()
+
+        # 备份所有和输入有关的状态
+        in_stream = self._in_stream
+        to_in = self._get_var_value('TO_IN')
+        in_buffer = self._memory[T4th.MemAddress.IN_BUFFER.value:T4th.MemAddress.IN_BUFFER.value+T4th.MemAddress.IN_BUFFER_LEN.value]
+        # 输入内容准备好，作为输入流
+        self._in_stream = StringIO(self._copy_counted_str(c_addr, u))
+        self._set_var_value('TO_IN', 0)
+        self._set_var_value('IN_BUFFER', 0)
+        # 开始执行
+        self._prompt = ''
+        self._evaluating = True
+        self.interpret()
+        # 恢复输入流
+        self._evaluating = False
+        self._prompt = ''
+        self._in_stream = in_stream
+        self._set_var_value('TO_IN', to_in)
+        self._memory[T4th.MemAddress.IN_BUFFER.value:T4th.MemAddress.IN_BUFFER.value+T4th.MemAddress.IN_BUFFER_LEN.value] = in_buffer
 
     def _word_environment_query(self):
         self._check_stack(2)
@@ -1156,6 +1182,7 @@ class T4th:
         self._set_var_value('STATE', 0)
         self._in_stream = sys.stdin
         self._prompt = ''
+        self._evaluating = False
 
     def interpret(self):
         while not self._quit:
@@ -1164,7 +1191,8 @@ class T4th:
                 if word_name is None:
                     break # End of input
 
-                self._prompt = ' ok\n' if self._get_var_value('STATE') == 0 else ' compiled\n'
+                if not self._evaluating:
+                    self._prompt = ' ok\n' if self._get_var_value('STATE') == 0 else ' compiled\n'
 
                 if word_name == '':
                     continue
