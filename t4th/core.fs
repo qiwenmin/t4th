@@ -1,4 +1,4 @@
-: \ tib @ >in ! ; immediate
+: \ source >in ! drop ; immediate
 
 : here dp @ ;
 
@@ -108,8 +108,6 @@ $20 constant bl
 ; immediate
 
 : count dup @ swap 1+ swap ;
-
-: source tib dup 1+ swap @ ;
 
 : s"
   [char] " parse          \ ( c-addr u ) 获得字符串地址和长度

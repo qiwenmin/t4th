@@ -14,10 +14,11 @@ class T4th:
     _version = '0.1.0'
 
     class MemAddress(Enum):
-        IN_BUFFER = 0
-        IN_BUFFER_LEN = 256
+        SOURCE_N = 0
+        IN_BUFFER_ADDR = auto()
+        IN_BUFFER_LEN = 256 - 1
 
-        PAD_BUFFER = IN_BUFFER + IN_BUFFER_LEN
+        PAD_BUFFER = IN_BUFFER_ADDR + IN_BUFFER_LEN
         PAD_BUFFER_LEN = 256
 
         PAD_END = PAD_BUFFER + PAD_BUFFER_LEN - 1
@@ -26,6 +27,7 @@ class T4th:
         DP = auto()
         BASE = auto()
         STATE = auto()
+        SOURCE_P = auto()
         TO_IN = auto()
 
         END = auto()
@@ -128,7 +130,6 @@ class T4th:
             self._VAR_WORD('BASE'),
             self._VAR_WORD('STATE'),
             self._VAR_WORD('TO_IN', '>IN'),
-            self._VAR_WORD('IN_BUFFER', 'TIB'),
             self._VAR_WORD('PAD_BUFFER', 'PAD'),
             self._VAR_WORD('PAD_END', 'PAD-END'),
 
@@ -247,6 +248,8 @@ class T4th:
             (T4th._Word('TYPE'), self._word_type),
 
             (T4th._Word('>NUMBER'), self._word_to_number),
+
+            (T4th._Word('SOURCE'), self._word_source),
         ]
 
         self._init_vm()
@@ -276,24 +279,36 @@ class T4th:
         u = self._data_stack.pop()
         c_addr = self._data_stack.pop()
 
-        # 备份所有和输入有关的状态
+        # 备份状态
+        pc = self._pc
         in_stream = self._in_stream
-        to_in = self._get_var_value('TO_IN')
-        in_buffer = self._memory[T4th.MemAddress.IN_BUFFER.value:T4th.MemAddress.IN_BUFFER.value+T4th.MemAddress.IN_BUFFER_LEN.value]
-        # 输入内容准备好，作为输入流
-        self._in_stream = StringIO(self._copy_counted_str(c_addr, u))
-        self._set_var_value('TO_IN', 0)
-        self._set_var_value('IN_BUFFER', 0)
-        # 开始执行
+
+        source_addr = self._source_addr()
+        source_n = self._source_n()
+        to_in = self._to_in()
+
+        # 准备好evaluate的环境
+        self._in_stream = StringIO('')
+        self._source_addr_set(c_addr)
+        self._source_n_set(u)
+        self._to_in_set(0)
+
         self._prompt = ''
         self._evaluating = True
+
+        # 执行
         self.interpret()
-        # 恢复输入流
+
+        # 还原状态
         self._evaluating = False
         self._prompt = ''
+
+        self._source_addr_set(source_addr)
+        self._source_n_set(source_n)
+        self._to_in_set(to_in)
+
         self._in_stream = in_stream
-        self._set_var_value('TO_IN', to_in)
-        self._memory[T4th.MemAddress.IN_BUFFER.value:T4th.MemAddress.IN_BUFFER.value+T4th.MemAddress.IN_BUFFER_LEN.value] = in_buffer
+        self._pc = pc
 
     def _word_environment_query(self):
         self._check_stack(2)
@@ -962,17 +977,17 @@ class T4th:
 
     def _word_refill(self):
         _input_buffer = get_input_line(prompt=self._prompt, stream=self._in_stream)
-        self._set_var_value('TO_IN', 0)
+        self._to_in_set(0)
         if _input_buffer is None:
-            self._set_var_value('IN_BUFFER', 0)
+            self._source_n_set(0)
 
             self._data_stack.append(0)
             return
 
-        copy_len = min(T4th.MemAddress.IN_BUFFER_LEN.value - 1, len(_input_buffer))
+        copy_len = min(self._in_buf_len(), len(_input_buffer))
         for i in range(copy_len):
-            self._memory[T4th.MemAddress.IN_BUFFER.value + 1 + i] = ord(_input_buffer[i])
-        self._set_var_value('IN_BUFFER', copy_len)
+            self._memory[self._source_addr() + i] = ord(_input_buffer[i])
+        self._source_n_set(copy_len)
 
         self._data_stack.append(-1)
 
@@ -980,13 +995,13 @@ class T4th:
         self._check_stack(1)
 
         c = chr(self._data_stack.pop())
-        in_begin = self._get_var_value('TO_IN')
+        in_begin = self._to_in()
         if self._get_until_char(c):
-            u = self._get_var_value('TO_IN') - in_begin - 1
+            u = self._to_in() - in_begin - 1
         else:
             u = 0
 
-        self._data_stack.append(T4th.MemAddress.IN_BUFFER.value + 1 + in_begin)
+        self._data_stack.append(self._source_addr() + in_begin)
         self._data_stack.append(u)
 
     def _word_word(self):
@@ -997,17 +1012,17 @@ class T4th:
         self._skip_chars(c)
 
         # 然后找word
-        in_begin = self._get_var_value('TO_IN')
+        in_begin = self._to_in()
         if self._get_until_char(c):
-            u = self._get_var_value('TO_IN') - in_begin - 1
+            u = self._to_in() - in_begin - 1
         else:
-            u = self._get_var_value('TO_IN') - in_begin
+            u = self._to_in() - in_begin
 
         # 复制到PAD中部
         c_addr = T4th.MemAddress.PAD_BUFFER.value + (T4th.MemAddress.PAD_BUFFER_LEN.value // 2)
         self._memory[c_addr] = u
         for i in range(u):
-            self._memory[c_addr + 1 + i] = self._memory[T4th.MemAddress.IN_BUFFER.value + 1 + in_begin + i]
+            self._memory[c_addr + 1 + i] = self._memory[self._source_addr() + in_begin + i]
 
         self._data_stack.append(c_addr)
 
@@ -1046,6 +1061,10 @@ class T4th:
         self._data_stack.append(addr + i)
         self._data_stack.append(n - i)
 
+    def _word_source(self):
+        self._data_stack.append(self._source_addr())
+        self._data_stack.append(self._source_n())
+
 
     # 辅助函数
 
@@ -1083,50 +1102,74 @@ class T4th:
             s += chr(self._memory[c_addr + i])
         return s
 
+    def _in_buf_len(self):
+        return T4th.MemAddress.IN_BUFFER_LEN.value
+
+    def _source_addr(self):
+        return self._get_var_value('SOURCE_P')
+
+    def _source_addr_set(self, v):
+        self._set_var_value('SOURCE_P', v)
+
+    def _source_n(self):
+        return self._get_var_value('SOURCE_N')
+
+    def _source_n_set(self, v):
+        self._set_var_value('SOURCE_N', v)
+
+    def _to_in(self):
+        return self._get_var_value('TO_IN')
+
+    def _to_in_inc(self):
+        self._inc_var('TO_IN')
+
+    def _to_in_set(self, v):
+        self._set_var_value('TO_IN', v)
+
     # IO函数
 
     def _skip_chars(self, c):
-        while self._get_var_value('TO_IN') < self._memory[T4th.MemAddress.IN_BUFFER.value]:
-            ch_ord = self._memory[T4th.MemAddress.IN_BUFFER.value + 1 + self._get_var_value('TO_IN')]
+        while self._to_in() < self._source_n():
+            ch_ord = self._memory[self._source_addr() + self._to_in()]
             if chr(ch_ord) != c:
                 break
 
-            self._inc_var('TO_IN')
+            self._to_in_inc()
 
     def _get_until_char(self, c) -> bool:
-        while self._get_var_value('TO_IN') < self._memory[T4th.MemAddress.IN_BUFFER.value]:
-            ch_ord = self._memory[T4th.MemAddress.IN_BUFFER.value + 1 + self._get_var_value('TO_IN')]
+        while self._to_in() < self._source_n():
+            ch_ord = self._memory[self._source_addr() + self._to_in()]
             if chr(ch_ord) == c:
-                self._inc_var('TO_IN')
+                self._to_in_inc()
                 return True
-            self._inc_var('TO_IN')
+            self._to_in_inc()
         return False
 
     def _get_next_word_or_none(self) -> Optional[str]:
-        if self._get_var_value('IN_BUFFER') == 0:
+        if self._source_n() == 0:
             _input_buffer = get_input_line(prompt=self._prompt, stream=self._in_stream)
-            self._set_var_value('TO_IN', 0)
+            self._to_in_set(0)
             if _input_buffer is None:
-                self._set_var_value('IN_BUFFER', 0)
+                self._source_n_set(0)
                 return None
 
             # 复制输入内容到memory
-            copy_len = min(T4th.MemAddress.IN_BUFFER_LEN.value - 1, len(_input_buffer))
+            copy_len = min(self._in_buf_len(), len(_input_buffer))
             for i in range(copy_len):
-                self._memory[T4th.MemAddress.IN_BUFFER.value + 1 + i] = ord(_input_buffer[i])
-            self._set_var_value('IN_BUFFER', copy_len)
+                self._memory[self._source_addr() + i] = ord(_input_buffer[i])
+            self._source_n_set(copy_len)
 
-        if self._get_var_value('TO_IN') >= self._memory[T4th.MemAddress.IN_BUFFER.value]:
-            self._set_var_value('TO_IN', 0)
-            self._set_var_value('IN_BUFFER', 0)
+        if self._to_in() >= self._source_n():
+            self._to_in_set(0)
+            self._source_n_set(0)
             return ''
 
         word = ''
-        while self._get_var_value('TO_IN') < self._memory[T4th.MemAddress.IN_BUFFER.value]:
-            ch_ord = self._memory[T4th.MemAddress.IN_BUFFER.value + 1 + self._get_var_value('TO_IN')]
+        while self._to_in() < self._source_n():
+            ch_ord = self._memory[self._source_addr() + self._to_in()]
             c = chr(ch_ord)
 
-            self._inc_var('TO_IN')
+            self._to_in_inc()
             if not c in [' ', '\t', '\n', '\r']:
                 word += c
             else:
@@ -1175,8 +1218,9 @@ class T4th:
         self._data_stack.clear()
         self._return_stack.clear()
 
-        self._set_var_value('IN_BUFFER', 0)
-        self._set_var_value('TO_IN', 0)
+        self._source_addr_set(T4th.MemAddress.IN_BUFFER_ADDR.value)
+        self._source_n_set(0)
+        self._to_in_set(0)
 
         self._pc = 0
         self._exec_pc = 0
