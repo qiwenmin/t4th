@@ -1,12 +1,10 @@
 .PHONY: test test-standard coverage run
 
-FS_TESTS := $(wildcard tests/test_*.fs)
-
 test:
 	python -m unittest discover -s tests
 
 test-standard:
-	@(cat tests/ttester.fs; echo ; cat $(FS_TESTS)) | python main.py
+	@echo "include tests/ttester.fs include tests/test_core.fs" | python main.py
 
 coverage:
 	python -m coverage run -m unittest discover -s tests

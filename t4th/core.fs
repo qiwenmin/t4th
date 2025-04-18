@@ -329,6 +329,7 @@ DOES> ( ... -- ... )
 : 2VARIABLE ( "name" -- )
     CREATE 0 , 0 ,  ;
 
+: include parse-name included ;
 
 \ 这个词之后的，才能forget。
 create user-word-begin

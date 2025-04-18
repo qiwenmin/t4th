@@ -252,6 +252,8 @@ class T4th:
             (T4th._Word('SOURCE'), self._word_source),
             (T4th._Word('SAVE-INPUT'), self._word_save_input),
             (T4th._Word('RESTORE-INPUT'), self._word_restore_input),
+
+            (T4th._Word('INCLUDED'), self._word_included),
         ]
 
         self._init_vm()
@@ -283,11 +285,7 @@ class T4th:
 
         # 备份状态
         pc = self._pc
-        in_stream = self._in_stream
-
-        source_addr = self._source_addr()
-        source_n = self._source_n()
-        to_in = self._to_in()
+        input_backup = self._input_backup()
 
         # 准备好evaluate的环境
         self._in_stream = StringIO('')
@@ -305,11 +303,7 @@ class T4th:
         self._evaluating = False
         self._prompt = ''
 
-        self._source_addr_set(source_addr)
-        self._source_n_set(source_n)
-        self._to_in_set(to_in)
-
-        self._in_stream = in_stream
+        self._input_restore(input_backup)
         self._pc = pc
 
     def _word_environment_query(self):
@@ -1070,48 +1064,48 @@ class T4th:
 
     def _word_save_input(self):
         # 备份状态
-        stream_pos = self._in_stream.tell()
-        in_stream = self._in_stream
+        backup = self._input_backup()
+        self._data_stack.append(backup)
+        self._data_stack.append(1)
 
-        source_content = self._memory[self._source_addr():self._source_addr() + self._source_n()]
-        source_addr = self._source_addr()
-        source_n = self._source_n()
-        to_in = self._to_in()
-
-        # 保存到堆栈
-        self._data_stack.append(stream_pos)
-        self._data_stack.append(in_stream)
-        self._data_stack.append(source_content)
-        self._data_stack.append(source_addr)
-        self._data_stack.append(source_n)
-        self._data_stack.append(to_in)
-        self._data_stack.append(6)
 
     def _word_restore_input(self):
-        # 从堆栈取回
-        self._check_stack(7)
+        self._check_stack(2)
 
         n = self._data_stack.pop()
-        if n != 6:
+        if n != 1:
             raise ValueError(f'Invalid number of save-input parameters: {n}')
-        to_in = self._data_stack.pop()
-        source_n = self._data_stack.pop()
-        source_addr = self._data_stack.pop()
-        source_content = self._data_stack.pop()
-        in_stream = self._data_stack.pop()
-        stream_pos = self._data_stack.pop()
 
-        # 还原状态
-        self._source_addr_set(source_addr)
-        self._source_n_set(source_n)
-        self._to_in_set(to_in)
-        self._memory[source_addr:source_addr + source_n] = source_content
+        backup = self._data_stack.pop()
 
-        self._in_stream = in_stream
-        self._in_stream.seek(stream_pos)
+        self._input_restore(backup)
 
         # 恢复的结果
         self._data_stack.append(0)
+
+    def _word_included(self):
+        self._check_stack(2)
+
+        u = self._data_stack.pop()
+        addr = self._data_stack.pop()
+
+        filename = self._copy_counted_str(addr, u)
+
+        f = open(filename, 'r', encoding='utf-8')
+
+        input_backup = self._input_backup()
+
+        try:
+            pc = self._pc
+            self._in_stream = f
+            self._source_n_set(0)
+            self._to_in_set(0)
+
+            self.interpret()
+        finally:
+            f.close()
+            self._input_restore(input_backup)
+            self._pc = pc
 
 
     # 辅助函数
@@ -1173,6 +1167,29 @@ class T4th:
 
     def _to_in_set(self, v):
         self._set_var_value('TO_IN', v)
+
+    def _input_backup(self):
+        stream_pos = 0 if not self._in_stream.seekable() else self._in_stream.tell()
+        in_stream = self._in_stream
+
+        source_content = self._memory[self._source_addr():self._source_addr() + self._source_n()]
+        source_addr = self._source_addr()
+        source_n = self._source_n()
+        to_in = self._to_in()
+
+        return (stream_pos, in_stream, source_content, source_addr, source_n, to_in)
+
+    def _input_restore(self, backup):
+        (stream_pos, in_stream, source_content, source_addr, source_n, to_in) = backup
+
+        self._source_addr_set(source_addr)
+        self._source_n_set(source_n)
+        self._to_in_set(to_in)
+        self._memory[source_addr:source_addr + source_n] = source_content
+
+        self._in_stream = in_stream
+        if self._in_stream.seekable():
+            self._in_stream.seek(stream_pos)
 
     # IO函数
 
