@@ -1103,7 +1103,7 @@ class T4th:
         return False
 
     def _get_next_word_or_none(self) -> Optional[str]:
-        if self._get_var_value('TO_IN') == 0:
+        if self._get_var_value('IN_BUFFER') == 0:
             _input_buffer = get_input_line(prompt=self._prompt, stream=self._in_stream)
             self._set_var_value('TO_IN', 0)
             if _input_buffer is None:
@@ -1118,6 +1118,7 @@ class T4th:
 
         if self._get_var_value('TO_IN') >= self._memory[T4th.MemAddress.IN_BUFFER.value]:
             self._set_var_value('TO_IN', 0)
+            self._set_var_value('IN_BUFFER', 0)
             return ''
 
         word = ''
