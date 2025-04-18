@@ -314,5 +314,21 @@ DOES> ( ... -- ... )
   then
 ; immediate
 
+: abort"
+  postpone s"
+  postpone rot
+  postpone 0=
+  postpone if
+    postpone 2drop
+  postpone else
+    postpone type
+    postpone abort
+  postpone then
+; immediate
+
+: 2VARIABLE ( "name" -- )
+    CREATE 0 , 0 ,  ;
+
+
 \ 这个词之后的，才能forget。
 create user-word-begin

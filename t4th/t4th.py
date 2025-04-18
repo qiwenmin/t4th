@@ -250,6 +250,8 @@ class T4th:
             (T4th._Word('>NUMBER'), self._word_to_number),
 
             (T4th._Word('SOURCE'), self._word_source),
+            (T4th._Word('SAVE-INPUT'), self._word_save_input),
+            (T4th._Word('RESTORE-INPUT'), self._word_restore_input),
         ]
 
         self._init_vm()
@@ -1064,6 +1066,52 @@ class T4th:
     def _word_source(self):
         self._data_stack.append(self._source_addr())
         self._data_stack.append(self._source_n())
+
+
+    def _word_save_input(self):
+        # 备份状态
+        stream_pos = self._in_stream.tell()
+        in_stream = self._in_stream
+
+        source_content = self._memory[self._source_addr():self._source_addr() + self._source_n()]
+        source_addr = self._source_addr()
+        source_n = self._source_n()
+        to_in = self._to_in()
+
+        # 保存到堆栈
+        self._data_stack.append(stream_pos)
+        self._data_stack.append(in_stream)
+        self._data_stack.append(source_content)
+        self._data_stack.append(source_addr)
+        self._data_stack.append(source_n)
+        self._data_stack.append(to_in)
+        self._data_stack.append(6)
+
+    def _word_restore_input(self):
+        # 从堆栈取回
+        self._check_stack(7)
+
+        n = self._data_stack.pop()
+        if n != 6:
+            raise ValueError(f'Invalid number of save-input parameters: {n}')
+        to_in = self._data_stack.pop()
+        source_n = self._data_stack.pop()
+        source_addr = self._data_stack.pop()
+        source_content = self._data_stack.pop()
+        in_stream = self._data_stack.pop()
+        stream_pos = self._data_stack.pop()
+
+        # 还原状态
+        self._source_addr_set(source_addr)
+        self._source_n_set(source_n)
+        self._to_in_set(to_in)
+        self._memory[source_addr:source_addr + source_n] = source_content
+
+        self._in_stream = in_stream
+        self._in_stream.seek(stream_pos)
+
+        # 恢复的结果
+        self._data_stack.append(0)
 
 
     # 辅助函数

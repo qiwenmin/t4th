@@ -240,6 +240,15 @@ class TestT4th(unittest.TestCase):
         output_contains = r'foo bar'
         self._run_scripts_result_contains(scripts, output_contains)
 
+    def test_restore_input_fail(self):
+        scripts = "save-input 42 restore-input"
+        output_contains = r'Error: Invalid number of save-input parameters'
+        self._run_scripts_result_contains(scripts, output_contains)
+
+    def test_word_abort(self):
+        scripts = "abort"
+        output_contains = r'Error: Aborted'
+        self._run_scripts_result_contains(scripts, output_contains)
 
     def test_postpone(self):
         "F.6.1.2033"
